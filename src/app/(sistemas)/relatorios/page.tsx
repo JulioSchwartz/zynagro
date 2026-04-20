@@ -52,7 +52,7 @@ export default function Relatorios() {
   )
 
   // Anos disponíveis
-  const anos = [...new Set(lotes.map(l => new Date(l.data_inicio).getFullYear()))].sort()
+  const anos = Array.from(new Set(lotes.map(l => new Date(l.data_inicio).getFullYear()))).sort()
   if (!anos.includes(anoSelecionado) && anos.length > 0) setAnoSelecionado(anos[anos.length - 1])
 
   // Dados mensais
