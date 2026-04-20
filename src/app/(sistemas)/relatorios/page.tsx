@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useEmpresa } from '@/hooks/useEmpresa'
@@ -18,6 +18,9 @@ export default function Relatorios() {
   const [movimentos, setMovimentos] = useState<any[]>([])
   const [abaAtiva, setAbaAtiva] = useState<'lotes' | 'mensal'>('lotes')
   const [anoSelecionado, setAnoSelecionado] = useState(new Date().getFullYear())
+  const [importando, setImportando] = useState(false)
+  const [importResult, setImportResult] = useState<string | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (loading) return
@@ -47,11 +50,7 @@ export default function Relatorios() {
   }
 
   const anos = Array.from(new Set(lotes.map(l => new Date(l.data_inicio).getFullYear()))).sort()
-  if (!anos.includes(anoSelecionado) && anos.length > 0) setAnoSelecionado(anos[anos.length - 1])
-
-  const lotesFiltrados = lotes.filter(l =>
-    new Date(l.data_inicio).getFullYear() === anoSelecionado
-  )
+  const lotesFiltrados = lotes.filter(l => new Date(l.data_inicio).getFullYear() === anoSelecionado)
 
   const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
   const dadosMensais = meses.map((mes, idx) => {
@@ -70,25 +69,184 @@ export default function Relatorios() {
     return { mes, entradas, saidas, saldo: entradas - saidas, catSaidas, temDados: entradas > 0 || saidas > 0 }
   })
 
+  // EXPORTAR CSV — Por Lote
+  function exportarCSVLotes() {
+    const header = ['Lote','Data Início','Data Fim','Status','Aves','Entradas','Saídas','Resultado','Custo/Ave']
+    const rows = lotesFiltrados.map(l => {
+      const entr = getMov(l.id, 'entrada')
+      const said = getMov(l.id, 'saida')
+      const result = entr - said
+      const custo = l.num_aves && said > 0 ? (said / l.num_aves).toFixed(2) : '-'
+      return [
+        `Lote #${l.numero}`,
+        new Date(l.data_inicio + 'T12:00:00').toLocaleDateString('pt-BR'),
+        l.data_fim ? new Date(l.data_fim + 'T12:00:00').toLocaleDateString('pt-BR') : '-',
+        l.status === 'em_andamento' ? 'Em andamento' : 'Fechado',
+        l.num_aves || '-',
+        entr.toFixed(2),
+        said.toFixed(2),
+        result.toFixed(2),
+        custo,
+      ]
+    })
+    const csv = [header, ...rows].map(r => r.join(';')).join('\n')
+    baixarCSV(csv, `zynagro-lotes-${anoSelecionado}.csv`)
+  }
+
+  // EXPORTAR CSV — Mensal
+  function exportarCSVMensal() {
+    const header = ['Mês','Entradas','Saídas','Resultado']
+    const rows = dadosMensais.map(d => [d.mes, d.entradas.toFixed(2), d.saidas.toFixed(2), d.saldo.toFixed(2)])
+    const csv = [header, ...rows].map(r => r.join(';')).join('\n')
+    baixarCSV(csv, `zynagro-mensal-${anoSelecionado}.csv`)
+  }
+
+  // BAIXAR MODELO CSV para importação
+  function baixarModelo() {
+    const header = ['lote_numero','data_inicio','data_fim','num_aves','tipo','categoria','data','historico','documento','valor']
+    const exemplo = [
+      '1','2025-01-01','2025-01-28','32000','entrada','Pagamento Integradora','2025-01-28','Pagamento BRF lote 1','NF001','85000.00',
+    ]
+    const csv = [header, exemplo].map(r => r.join(';')).join('\n')
+    baixarCSV(csv, 'modelo-importacao-zynagro.csv')
+  }
+
+  function baixarCSV(csv: string, nome: string) {
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = nome
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // IMPORTAR CSV
+  async function importarCSV(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImportando(true)
+    setImportResult(null)
+
+    const text = await file.text()
+    const linhas = text.split('\n').filter(l => l.trim())
+    const header = linhas[0].split(';').map(h => h.trim().replace(/\r/g, ''))
+    const dados = linhas.slice(1)
+
+    let lotesImportados = 0
+    let movImportados = 0
+    let erros = 0
+
+    // Mapeia lotes já existentes por número
+    const lotesExistentes: Record<number, string> = {}
+    lotes.forEach(l => { lotesExistentes[l.numero] = l.id })
+
+    for (const linha of dados) {
+      if (!linha.trim()) continue
+      const cols = linha.split(';').map(c => c.trim().replace(/\r/g, ''))
+      const row: Record<string, string> = {}
+      header.forEach((h, i) => { row[h] = cols[i] || '' })
+
+      try {
+        const numLote = Number(row['lote_numero'])
+        let loteId = lotesExistentes[numLote]
+
+        // Cria lote se não existir
+        if (!loteId && row['data_inicio']) {
+          const dataFim = row['data_fim'] || (() => {
+            const d = new Date(row['data_inicio'])
+            d.setDate(d.getDate() + 28)
+            return d.toISOString().split('T')[0]
+          })()
+          const { data: novoLote } = await supabase.from('lotes').insert({
+            empresa_id: empresaId,
+            numero: numLote,
+            data_inicio: row['data_inicio'],
+            data_fim: dataFim,
+            num_aves: row['num_aves'] ? Number(row['num_aves']) : null,
+            status: 'fechado',
+          }).select().single()
+          if (novoLote) {
+            loteId = novoLote.id
+            lotesExistentes[numLote] = loteId
+            lotesImportados++
+          }
+        }
+
+        // Insere movimento
+        if (loteId && row['tipo'] && row['categoria'] && row['valor']) {
+          await supabase.from('lote_movimentos').insert({
+            lote_id: loteId,
+            empresa_id: empresaId,
+            data: row['data'] || row['data_inicio'],
+            tipo: row['tipo'],
+            categoria: row['categoria'],
+            historico: row['historico'] || row['categoria'],
+            documento: row['documento'] || null,
+            valor: Number(row['valor'].replace(',', '.')),
+          })
+          movImportados++
+        }
+      } catch {
+        erros++
+      }
+    }
+
+    await carregar()
+    setImportando(false)
+    setImportResult(`✅ Importação concluída! ${lotesImportados} lote(s) criado(s), ${movImportados} movimento(s) importado(s)${erros > 0 ? `, ${erros} erro(s)` : ''}.`)
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
   if (loading) return <p style={{ color: '#7ab648', textAlign: 'center', marginTop: 40 }}>Carregando...</p>
 
   return (
     <div>
       {/* CABEÇALHO */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1a2e0d', margin: 0 }}>📊 Relatórios</h1>
           <p style={{ color: '#64748b', marginTop: 4 }}>Análise financeira por lote e mensal</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <label style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Ano:</label>
           <select value={anoSelecionado} onChange={e => setAnoSelecionado(Number(e.target.value))}
             style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 14, background: '#fff' }}>
             {anos.map(a => <option key={a} value={a}>{a}</option>)}
             {anos.length === 0 && <option value={anoSelecionado}>{anoSelecionado}</option>}
           </select>
+          {/* EXPORTAR */}
+          <button onClick={abaAtiva === 'lotes' ? exportarCSVLotes : exportarCSVMensal}
+            style={{ background: '#2d6a1a', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
+            ⬇️ Exportar CSV
+          </button>
+          {/* IMPORTAR */}
+          <div style={{ position: 'relative' }}>
+            <button onClick={() => fileRef.current?.click()}
+              style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
+              ⬆️ Importar histórico
+            </button>
+            <input ref={fileRef} type="file" accept=".csv" onChange={importarCSV} style={{ display: 'none' }} />
+          </div>
+          <button onClick={baixarModelo}
+            style={{ background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', padding: '8px 14px', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 12 }}>
+            📄 Modelo CSV
+          </button>
         </div>
       </div>
+
+      {/* RESULTADO IMPORTAÇÃO */}
+      {importando && (
+        <div style={{ background: '#dbeafe', border: '1px solid #93c5fd', borderRadius: 10, padding: '12px 16px', marginBottom: 16, color: '#1d4ed8', fontWeight: 600 }}>
+          ⏳ Importando dados, aguarde...
+        </div>
+      )}
+      {importResult && (
+        <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 10, padding: '12px 16px', marginBottom: 16, color: '#15803d', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {importResult}
+          <button onClick={() => setImportResult(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#15803d', fontSize: 18 }}>✕</button>
+        </div>
+      )}
 
       {/* ABAS */}
       <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', marginBottom: 24 }}>
@@ -112,7 +270,7 @@ export default function Relatorios() {
             </div>
           ) : (
             <>
-              {/* CARDS RESUMO */}
+              {/* CARDS */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16, marginBottom: 24 }}>
                 {[
                   { label: 'Total Lotes', valor: lotesFiltrados.length, tipo: 'numero', cor: '#1a2e0d' },
@@ -129,19 +287,19 @@ export default function Relatorios() {
                 ))}
               </div>
 
-              {/* TABELA POR LOTE */}
+              {/* TABELA LOTES */}
               <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflowX: 'auto', marginBottom: 20 }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, tableLayout: 'fixed' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: '#1a2e0d', color: '#fff' }}>
-                      <th style={{ ...th, width: '10%' }}>Lote</th>
-                      <th style={{ ...th, width: '22%' }}>Período</th>
-                      <th style={{ ...th, width: '12%' }}>Status</th>
-                      <th style={{ ...th, width: '8%', textAlign: 'center' }}>Aves</th>
-                      <th style={{ ...th, width: '13%', textAlign: 'right' }}>Entradas</th>
-                      <th style={{ ...th, width: '13%', textAlign: 'right' }}>Saídas</th>
-                      <th style={{ ...th, width: '13%', textAlign: 'right' }}>Resultado</th>
-                      <th style={{ ...th, width: '9%', textAlign: 'right' }}>Custo/Ave</th>
+                      <th style={thL}>Lote</th>
+                      <th style={thL}>Período</th>
+                      <th style={thL}>Status</th>
+                      <th style={{ ...thR }}>Aves</th>
+                      <th style={thR}>Entradas</th>
+                      <th style={thR}>Saídas</th>
+                      <th style={thR}>Resultado</th>
+                      <th style={thR}>Custo/Ave</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -153,49 +311,49 @@ export default function Relatorios() {
                       return (
                         <tr key={lote.id} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc', cursor: 'pointer' }}
                           onClick={() => router.push(`/lotes/${lote.id}`)}>
-                          <td style={td}><strong>Lote #{lote.numero}</strong></td>
-                          <td style={td}>
+                          <td style={tdL}><strong>Lote #{lote.numero}</strong></td>
+                          <td style={tdL}>
                             {new Date(lote.data_inicio + 'T12:00:00').toLocaleDateString('pt-BR')}
                             {lote.data_fim && ` → ${new Date(lote.data_fim + 'T12:00:00').toLocaleDateString('pt-BR')}`}
                           </td>
-                          <td style={td}>
+                          <td style={tdL}>
                             <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: lote.status === 'em_andamento' ? '#dcfce7' : '#f1f5f9', color: lote.status === 'em_andamento' ? '#15803d' : '#64748b' }}>
                               {lote.status === 'em_andamento' ? '🔄 Andamento' : '✅ Fechado'}
                             </span>
                           </td>
-                          <td style={{ ...td, textAlign: 'center' }}>{lote.num_aves ? lote.num_aves.toLocaleString() : '-'}</td>
-                          <td style={{ ...td, textAlign: 'right', color: '#16a34a', fontWeight: 700 }}>{format(entr)}</td>
-                          <td style={{ ...td, textAlign: 'right', color: '#dc2626', fontWeight: 700 }}>{format(said)}</td>
-                          <td style={{ ...td, textAlign: 'right', color: resultado >= 0 ? '#16a34a' : '#dc2626', fontWeight: 800 }}>{format(resultado)}</td>
-                          <td style={{ ...td, textAlign: 'right', color: '#8b5e2a', fontWeight: 600 }}>{custoAve ? format(custoAve) : '-'}</td>
+                          <td style={tdR}>{lote.num_aves ? lote.num_aves.toLocaleString() : '-'}</td>
+                          <td style={{ ...tdR, color: '#16a34a', fontWeight: 700 }}>{format(entr)}</td>
+                          <td style={{ ...tdR, color: '#dc2626', fontWeight: 700 }}>{format(said)}</td>
+                          <td style={{ ...tdR, color: resultado >= 0 ? '#16a34a' : '#dc2626', fontWeight: 800 }}>{format(resultado)}</td>
+                          <td style={{ ...tdR, color: '#8b5e2a', fontWeight: 600 }}>{custoAve ? format(custoAve) : '-'}</td>
                         </tr>
                       )
                     })}
                   </tbody>
                   <tfoot>
                     <tr style={{ background: '#1a2e0d', color: '#fff', fontWeight: 700 }}>
-                      <td style={td} colSpan={4}>TOTAL</td>
-                      <td style={{ ...td, textAlign: 'right', color: '#86efac' }}>{format(lotesFiltrados.reduce((a, l) => a + getMov(l.id, 'entrada'), 0))}</td>
-                      <td style={{ ...td, textAlign: 'right', color: '#fca5a5' }}>{format(lotesFiltrados.reduce((a, l) => a + getMov(l.id, 'saida'), 0))}</td>
-                      <td style={{ ...td, textAlign: 'right', color: '#f5c842' }}>{format(lotesFiltrados.reduce((a, l) => a + getMov(l.id, 'entrada') - getMov(l.id, 'saida'), 0))}</td>
-                      <td style={td}>—</td>
+                      <td style={tdL} colSpan={4}>TOTAL</td>
+                      <td style={{ ...tdR, color: '#86efac' }}>{format(lotesFiltrados.reduce((a, l) => a + getMov(l.id, 'entrada'), 0))}</td>
+                      <td style={{ ...tdR, color: '#fca5a5' }}>{format(lotesFiltrados.reduce((a, l) => a + getMov(l.id, 'saida'), 0))}</td>
+                      <td style={{ ...tdR, color: '#f5c842' }}>{format(lotesFiltrados.reduce((a, l) => a + getMov(l.id, 'entrada') - getMov(l.id, 'saida'), 0))}</td>
+                      <td style={tdR}>—</td>
                     </tr>
                   </tfoot>
                 </table>
               </div>
 
-              {/* DETALHAMENTO POR CATEGORIA */}
+              {/* CATEGORIAS */}
               <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a2e0d', marginBottom: 16 }}>💸 % de Custo por Categoria</h2>
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, tableLayout: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                     <thead>
                       <tr style={{ background: '#f8fafc' }}>
-                        <th style={{ ...th, color: '#374151', background: '#f8fafc', textAlign: 'left', minWidth: 160 }}>Categoria</th>
+                        <th style={{ ...thL, color: '#374151', background: '#f8fafc', minWidth: 160 }}>Categoria</th>
                         {lotesFiltrados.map(l => (
-                          <th key={l.id} style={{ ...th, color: '#374151', background: '#f8fafc', textAlign: 'right', minWidth: 120 }}>Lote #{l.numero}</th>
+                          <th key={l.id} style={{ ...thR, color: '#374151', background: '#f8fafc', minWidth: 120 }}>Lote #{l.numero}</th>
                         ))}
-                        <th style={{ ...th, color: '#374151', background: '#f8fafc', textAlign: 'right', minWidth: 120 }}>Total</th>
+                        <th style={{ ...thR, color: '#374151', background: '#f8fafc', minWidth: 120 }}>Total</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -204,13 +362,13 @@ export default function Relatorios() {
                         if (totalCat === 0) return null
                         return (
                           <tr key={cat} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc' }}>
-                            <td style={{ ...td, textAlign: 'left' }}>{cat}</td>
+                            <td style={tdL}>{cat}</td>
                             {lotesFiltrados.map(l => (
-                              <td key={l.id} style={{ ...td, textAlign: 'right' }}>
+                              <td key={l.id} style={tdR}>
                                 {getMov(l.id, 'saida', cat) > 0 ? format(getMov(l.id, 'saida', cat)) : '-'}
                               </td>
                             ))}
-                            <td style={{ ...td, textAlign: 'right', fontWeight: 700, color: '#dc2626' }}>{format(totalCat)}</td>
+                            <td style={{ ...tdR, fontWeight: 700, color: '#dc2626' }}>{format(totalCat)}</td>
                           </tr>
                         )
                       })}
@@ -227,48 +385,48 @@ export default function Relatorios() {
       {abaAtiva === 'mensal' && (
         <div>
           <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflowX: 'auto', marginBottom: 20 }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, tableLayout: 'fixed' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: '#1a2e0d', color: '#fff' }}>
-                  <th style={{ ...th, width: '25%' }}>Mês</th>
-                  <th style={{ ...th, width: '25%', textAlign: 'right' }}>Entradas</th>
-                  <th style={{ ...th, width: '25%', textAlign: 'right' }}>Saídas</th>
-                  <th style={{ ...th, width: '25%', textAlign: 'right' }}>Resultado</th>
+                  <th style={{ ...thL, width: '30%' }}>Mês</th>
+                  <th style={thR}>Entradas</th>
+                  <th style={thR}>Saídas</th>
+                  <th style={thR}>Resultado</th>
                 </tr>
               </thead>
               <tbody>
                 {dadosMensais.map((d, i) => (
-                  <tr key={d.mes} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc', opacity: d.temDados ? 1 : 0.4 }}>
-                    <td style={td}><strong>{d.mes}</strong></td>
-                    <td style={{ ...td, textAlign: 'right', color: '#16a34a', fontWeight: d.temDados ? 700 : 400 }}>{format(d.entradas)}</td>
-                    <td style={{ ...td, textAlign: 'right', color: '#dc2626', fontWeight: d.temDados ? 700 : 400 }}>{format(d.saidas)}</td>
-                    <td style={{ ...td, textAlign: 'right', color: d.saldo >= 0 ? '#16a34a' : '#dc2626', fontWeight: 800 }}>{format(d.saldo)}</td>
+                  <tr key={d.mes} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc', opacity: d.temDados ? 1 : 0.45 }}>
+                    <td style={{ ...tdL, fontWeight: d.temDados ? 700 : 400 }}>{d.mes}</td>
+                    <td style={{ ...tdR, color: '#16a34a', fontWeight: d.temDados ? 700 : 400 }}>{format(d.entradas)}</td>
+                    <td style={{ ...tdR, color: '#dc2626', fontWeight: d.temDados ? 700 : 400 }}>{format(d.saidas)}</td>
+                    <td style={{ ...tdR, color: d.saldo >= 0 ? '#16a34a' : '#dc2626', fontWeight: 800 }}>{format(d.saldo)}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr style={{ background: '#1a2e0d', color: '#fff', fontWeight: 700 }}>
-                  <td style={td}>TOTAL {anoSelecionado}</td>
-                  <td style={{ ...td, textAlign: 'right', color: '#86efac' }}>{format(dadosMensais.reduce((a, d) => a + d.entradas, 0))}</td>
-                  <td style={{ ...td, textAlign: 'right', color: '#fca5a5' }}>{format(dadosMensais.reduce((a, d) => a + d.saidas, 0))}</td>
-                  <td style={{ ...td, textAlign: 'right', color: '#f5c842' }}>{format(dadosMensais.reduce((a, d) => a + d.saldo, 0))}</td>
+                  <td style={tdL}>TOTAL {anoSelecionado}</td>
+                  <td style={{ ...tdR, color: '#86efac' }}>{format(dadosMensais.reduce((a, d) => a + d.entradas, 0))}</td>
+                  <td style={{ ...tdR, color: '#fca5a5' }}>{format(dadosMensais.reduce((a, d) => a + d.saidas, 0))}</td>
+                  <td style={{ ...tdR, color: '#f5c842' }}>{format(dadosMensais.reduce((a, d) => a + d.saldo, 0))}</td>
                 </tr>
               </tfoot>
             </table>
           </div>
 
-          {/* DETALHAMENTO MENSAL POR CATEGORIA */}
+          {/* CATEGORIAS MENSAL */}
           <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a2e0d', marginBottom: 16 }}>💸 Saídas por Categoria — {anoSelecionado}</h2>
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, tableLayout: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
-                    <th style={{ ...th, color: '#374151', background: '#f8fafc', textAlign: 'left', minWidth: 180 }}>Categoria</th>
+                    <th style={{ ...thL, color: '#374151', background: '#f8fafc', minWidth: 180 }}>Categoria</th>
                     {dadosMensais.filter(d => d.temDados).map(d => (
-                      <th key={d.mes} style={{ ...th, color: '#374151', background: '#f8fafc', textAlign: 'right', minWidth: 100 }}>{d.mes.slice(0, 3)}</th>
+                      <th key={d.mes} style={{ ...thR, color: '#374151', background: '#f8fafc', minWidth: 90 }}>{d.mes.slice(0, 3)}</th>
                     ))}
-                    <th style={{ ...th, color: '#374151', background: '#f8fafc', textAlign: 'right', minWidth: 120 }}>Total</th>
+                    <th style={{ ...thR, color: '#374151', background: '#f8fafc', minWidth: 120 }}>Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -278,13 +436,13 @@ export default function Relatorios() {
                     if (totalCat === 0) return null
                     return (
                       <tr key={cat} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc' }}>
-                        <td style={{ ...td, textAlign: 'left' }}>{cat}</td>
+                        <td style={tdL}>{cat}</td>
                         {mesesComDados.map(d => (
-                          <td key={d.mes} style={{ ...td, textAlign: 'right' }}>
+                          <td key={d.mes} style={tdR}>
                             {d.catSaidas[cat] > 0 ? format(d.catSaidas[cat]) : '-'}
                           </td>
                         ))}
-                        <td style={{ ...td, textAlign: 'right', fontWeight: 700, color: '#dc2626' }}>{format(totalCat)}</td>
+                        <td style={{ ...tdR, fontWeight: 700, color: '#dc2626' }}>{format(totalCat)}</td>
                       </tr>
                     )
                   })}
@@ -298,5 +456,7 @@ export default function Relatorios() {
   )
 }
 
-const th: React.CSSProperties = { padding: '12px 16px', fontWeight: 700, fontSize: 12, whiteSpace: 'nowrap' }
-const td: React.CSSProperties = { padding: '12px 16px', borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap' }
+const thL: React.CSSProperties = { padding: '12px 16px', fontWeight: 700, fontSize: 12, textAlign: 'left', whiteSpace: 'nowrap' }
+const thR: React.CSSProperties = { padding: '12px 16px', fontWeight: 700, fontSize: 12, textAlign: 'right', whiteSpace: 'nowrap' }
+const tdL: React.CSSProperties = { padding: '12px 16px', borderBottom: '1px solid #f1f5f9', textAlign: 'left', whiteSpace: 'nowrap' }
+const tdR: React.CSSProperties = { padding: '12px 16px', borderBottom: '1px solid #f1f5f9', textAlign: 'right', whiteSpace: 'nowrap' }ce: 'nowrap' }
