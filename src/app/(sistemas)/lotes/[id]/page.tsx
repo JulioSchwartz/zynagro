@@ -251,11 +251,7 @@ export default function DetalheLote() {
             <span style={{ background: '#dcfce7', color: '#15803d', padding: '8px 16px', borderRadius: 10, fontWeight: 700, fontSize: 13 }}>✅ Lote Fechado</span>
           )}
         </div>
-          ) : (
-            <span style={{ background: '#dcfce7', color: '#15803d', padding: '8px 16px', borderRadius: 10, fontWeight: 700, fontSize: 13 }}>✅ Lote Fechado</span>
-          )}
-        </div>
-      </div>
+       </div>
 
       {/* CARDS RESUMO FINANCEIRO */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 24 }}>
