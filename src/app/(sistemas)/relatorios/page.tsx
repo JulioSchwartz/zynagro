@@ -63,12 +63,11 @@ export default function Relatorios() {
   const lotesFiltrados = lotes.filter(l => new Date(l.data_inicio).getFullYear() === anoSelecionado)
 
   const dadosMensais = MESES.map((mes, idx) => {
-    const lotesDoMes = lotes.filter(l => {
-      const d = new Date(l.data_inicio)
+    // Agrupa pela DATA DO LANÇAMENTO (m.data), não pela data de início do lote
+    const movDoMes = movimentos.filter(m => {
+      const d = new Date(m.data + 'T12:00:00')
       return d.getFullYear() === anoSelecionado && d.getMonth() === idx
     })
-    const ids = lotesDoMes.map(l => l.id)
-    const movDoMes = movimentos.filter(m => ids.includes(m.lote_id))
     const entradas = movDoMes.filter(m => m.tipo === 'entrada').reduce((a, m) => a + Number(m.valor), 0)
     const saidas = movDoMes.filter(m => m.tipo === 'saida').reduce((a, m) => a + Number(m.valor), 0)
     const catSaidas = CATEGORIAS_SAIDA.reduce((acc, cat) => {
