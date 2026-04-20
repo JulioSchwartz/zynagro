@@ -93,6 +93,20 @@ export default function Lotes() {
     setSalvando(false)
   }
 
+  async function excluirLote(e: React.MouseEvent, loteId: string, numero: number) {
+    e.stopPropagation()
+    if (!confirm(`Excluir o Lote #${numero}? Todos os dados (financeiro, diário, pesagem, sanitário) serão apagados permanentemente.`)) return
+
+    await Promise.all([
+      supabase.from('lote_movimentos').delete().eq('lote_id', loteId),
+      supabase.from('lote_diario_galpao').delete().eq('lote_id', loteId),
+      supabase.from('lote_pesagem').delete().eq('lote_id', loteId),
+      supabase.from('lote_sanitario').delete().eq('lote_id', loteId),
+    ])
+    await supabase.from('lotes').delete().eq('id', loteId)
+    await carregar()
+  }
+
   function format(v: number) {
     return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   }
@@ -250,6 +264,11 @@ export default function Lotes() {
                     <p style={{ fontSize: 12, color: '#64748b' }}>Entradas: <span style={{ color: '#16a34a', fontWeight: 600 }}>{format(entr)}</span></p>
                     <p style={{ fontSize: 12, color: '#64748b' }}>Saídas: <span style={{ color: '#dc2626', fontWeight: 600 }}>{format(said)}</span></p>
                     <p style={{ fontSize: 16, fontWeight: 800, color: saldo >= 0 ? '#16a34a' : '#dc2626', marginTop: 4 }}>Saldo: {format(saldo)}</p>
+                    <button
+                      onClick={e => excluirLote(e, lote.id, lote.numero)}
+                      style={{ marginTop: 10, background: '#fee2e2', color: '#dc2626', border: 'none', padding: '5px 12px', borderRadius: 7, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                      🗑️ Excluir
+                    </button>
                   </div>
                 </div>
               </div>
