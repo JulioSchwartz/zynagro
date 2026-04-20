@@ -27,7 +27,7 @@ export default function DetalheLote() {
   const [diarios, setDiarios] = useState<any[]>([])
   const [pesagens, setPesagens] = useState<any[]>([])
   const [salvando, setSalvando] = useState(false)
-  const [abaAtiva, setAbaAtiva] = useState<'financeiro' | 'diario' | 'pesagem'>('financeiro')
+  const [abaAtiva, setAbaAtiva] = useState<'financeiro' | 'diario' | 'pesagem' | 'sanitario'>('financeiro')
   const [abaFinanceiro, setAbaFinanceiro] = useState<'entrada' | 'saida'>('entrada')
 
   // Form financeiro
@@ -691,48 +691,28 @@ async function salvarSanitario() {
           )}
         </div>
       )}
-    </div>
-  )
-}
 
-{/* ABA SANITÁRIO */}
-{abaAtiva === 'sanitario' && (
-  <div>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-      <div>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a2e0d', margin: 0 }}>
-          🧬 Controle Sanitário
-        </h2>
-        <p style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
-          Vacinas, medicamentos, biosseguridade e controle de pragas
-        </p>
-      </div>
+      {/* ABA SANITÁRIO */}
+      {abaAtiva === 'sanitario' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a2e0d', margin: 0 }}>🧬 Controle Sanitário</h2>
+              <p style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Vacinas, medicamentos, biosseguridade e controle de pragas</p>
+            </div>
+            {lote.status === 'em_andamento' && (
+              <button onClick={() => setMostrarFormSanitario(!mostrarFormSanitario)}
+                style={{ background: mostrarFormSanitario ? '#64748b' : '#2d6a1a', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
+                {mostrarFormSanitario ? '✕ Cancelar' : '+ Novo Registro'}
+              </button>
+            )}
+          </div>
 
-      {lote.status === 'em_andamento' && (
-        <button
-          onClick={() => setMostrarFormSanitario(!mostrarFormSanitario)}
-          style={{
-            background: mostrarFormSanitario ? '#64748b' : '#2d6a1a',
-            color: '#fff',
-            border: 'none',
-            padding: '10px 18px',
-            borderRadius: 10,
-            fontWeight: 700,
-            cursor: 'pointer',
-            fontSize: 13,
-          }}
-        >
-          {mostrarFormSanitario ? '✕ Cancelar' : '+ Novo Registro'}
-        </button>
-      )}
-    </div>
+          {/* FORM SANITÁRIO */}
+          {mostrarFormSanitario && (
+            <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 20 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a2e0d', marginBottom: 16 }}>Novo Registro Sanitário</h3>
 
-    {/* FORM SANITÁRIO */}
-    {mostrarFormSanitario && (
-      <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 20 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a2e0d', marginBottom: 16 }}>
-          Novo Registro Sanitário
-        </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14, marginBottom: 14 }}>
                 <div>
                   <label style={labelSt}>Data *</label>
@@ -818,142 +798,71 @@ async function salvarSanitario() {
                   rows={3} style={{ ...inputSt, resize: 'vertical' as const, fontFamily: 'inherit' }} />
               </div>
 
-              <button
-          onClick={salvarSanitario}
-          disabled={salvandoSanitario}
-          style={{
-            background: '#2d6a1a',
-            color: '#fff',
-            border: 'none',
-            padding: '12px 24px',
-            borderRadius: 10,
-            fontWeight: 700,
-            cursor: 'pointer',
-          }}
-        >
-          {salvandoSanitario ? 'Salvando...' : '✓ Salvar Registro'}
-        </button>
-      </div>
-    )}
-
-    {/* HISTÓRICO SANITÁRIO */}
-    {sanitarios.length === 0 ? (
-      <div style={{ background: '#f0fdf4', border: '1px dashed #86efac', borderRadius: 16, padding: 30, textAlign: 'center' }}>
-        <p style={{ color: '#16a34a', fontWeight: 600 }}>
-          Nenhum registro sanitário ainda
-        </p>
-        <p style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>
-          Registre vacinas, medicamentos e procedimentos sanitários
-        </p>
-      </div>
-    ) : (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {sanitarios.map((s) => {
-          const corTipo: Record<string, string> = {
-            Vacina: '#2563eb',
-            Medicamento: '#7c3aed',
-            Tratamento: '#0891b2',
-            'Controle de Pragas': '#92400e',
-            Desinfecção: '#065f46',
-            'Descarte de Aves': '#dc2626',
-            'Visita Técnica': '#1a2e0d',
-          }
-
-          const cor = corTipo[s.tipo] || '#64748b'
-
-          return (
-            <div
-              key={s.id}
-              style={{
-                background: '#fff',
-                borderRadius: 14,
-                padding: 20,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                borderLeft: `4px solid ${cor}`,
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
-                    <span style={{
-                      background: cor + '20',
-                      color: cor,
-                      fontSize: 11,
-                      fontWeight: 700,
-                      padding: '2px 10px',
-                      borderRadius: 999
-                    }}>
-                      {s.tipo}
-                    </span>
-
-                    <p style={{ fontWeight: 700, color: '#1a2e0d', fontSize: 15 }}>
-                      {s.produto}
-                    </p>
-
-                    {s.dia_lote && (
-                      <span style={{
-                        background: '#fef3c7',
-                        color: '#92400e',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        padding: '2px 8px',
-                        borderRadius: 999
-                      }}>
-                        Dia {s.dia_lote}
-                      </span>
-                    )}
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 12, color: '#64748b' }}>
-                    <span>📅 {new Date(s.data + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
-                    {s.galpoes_afetados && (
-                      <span>
-                        🏗️ {s.galpoes_afetados === 'todos' ? 'Todos os galpões' : `Galpão ${s.galpoes_afetados}`}
-                      </span>
-                    )}
-                    {s.dose && <span>💊 {s.dose}</span>}
-                    {s.via_aplicacao && <span>🔬 {s.via_aplicacao}</span>}
-                    {s.responsavel && <span>👤 {s.responsavel}</span>}
-                    {s.fabricante && <span>🏭 {s.fabricante}</span>}
-                    {s.quantidade_aves && (
-                      <span>🐔 {Number(s.quantidade_aves).toLocaleString()} aves</span>
-                    )}
-                  </div>
-
-                  {s.observacoes && (
-                    <p style={{
-                      fontSize: 12,
-                      color: '#374151',
-                      marginTop: 8,
-                      padding: '8px 12px',
-                      background: '#f8fafc',
-                      borderRadius: 8
-                    }}>
-                      📝 {s.observacoes}
-                    </p>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => excluirSanitario(s.id)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#cbd5e1',
-                    cursor: 'pointer',
-                    fontSize: 16
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
+              <button onClick={salvarSanitario} disabled={salvandoSanitario}
+                style={{ background: '#2d6a1a', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}>
+                {salvandoSanitario ? 'Salvando...' : '✓ Salvar Registro'}
+              </button>
             </div>
-          )
-        })}
-      </div>
-    )}
-  </div>
-)}
+          )}
+
+          {/* HISTÓRICO SANITÁRIO */}
+          {sanitarios.length === 0 ? (
+            <div style={{ background: '#f0fdf4', border: '1px dashed #86efac', borderRadius: 16, padding: 30, textAlign: 'center' }}>
+              <p style={{ color: '#16a34a', fontWeight: 600 }}>Nenhum registro sanitário ainda</p>
+              <p style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>Registre vacinas, medicamentos e procedimentos sanitários</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {sanitarios.map(s => {
+                const corTipo: Record<string, string> = {
+                  'Vacina': '#2563eb',
+                  'Medicamento': '#7c3aed',
+                  'Tratamento': '#0891b2',
+                  'Controle de Pragas': '#92400e',
+                  'Desinfecção': '#065f46',
+                  'Descarte de Aves': '#dc2626',
+                  'Visita Técnica': '#1a2e0d',
+                }
+                const cor = corTipo[s.tipo] || '#64748b'
+                return (
+                  <div key={s.id} style={{ background: '#fff', borderRadius: 14, padding: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', borderLeft: `4px solid ${cor}` }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                          <span style={{ background: cor + '20', color: cor, fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 999 }}>
+                            {s.tipo}
+                          </span>
+                          <p style={{ fontWeight: 700, color: '#1a2e0d', fontSize: 15 }}>{s.produto}</p>
+                          {s.dia_lote && <span style={{ background: '#fef3c7', color: '#92400e', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999 }}>Dia {s.dia_lote}</span>}
+                        </div>
+                        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 12, color: '#64748b' }}>
+                          <span>📅 {new Date(s.data + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
+                          {s.galpoes_afetados && <span>🏗️ {s.galpoes_afetados === 'todos' ? 'Todos os galpões' : `Galpão ${s.galpoes_afetados}`}</span>}
+                          {s.dose && <span>💊 {s.dose}</span>}
+                          {s.via_aplicacao && <span>🔬 {s.via_aplicacao}</span>}
+                          {s.responsavel && <span>👤 {s.responsavel}</span>}
+                          {s.fabricante && <span>🏭 {s.fabricante}</span>}
+                          {s.quantidade_aves && <span>🐔 {Number(s.quantidade_aves).toLocaleString()} aves</span>}
+                        </div>
+                        {s.observacoes && (
+                          <p style={{ fontSize: 12, color: '#374151', marginTop: 8, padding: '8px 12px', background: '#f8fafc', borderRadius: 8 }}>
+                            📝 {s.observacoes}
+                          </p>
+                        )}
+                      </div>
+                      <button onClick={() => excluirSanitario(s.id)}
+                        style={{ background: 'transparent', border: 'none', color: '#cbd5e1', cursor: 'pointer', fontSize: 16 }}>✕</button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 const labelSt: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }
 const inputSt: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 14, boxSizing: 'border-box' as const, background: '#fff' }
