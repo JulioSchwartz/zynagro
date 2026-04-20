@@ -46,16 +46,13 @@ export default function Relatorios() {
     ).reduce((a, m) => a + Number(m.valor), 0)
   }
 
-  // Filtra lotes pelo ano selecionado
+  const anos = Array.from(new Set(lotes.map(l => new Date(l.data_inicio).getFullYear()))).sort()
+  if (!anos.includes(anoSelecionado) && anos.length > 0) setAnoSelecionado(anos[anos.length - 1])
+
   const lotesFiltrados = lotes.filter(l =>
     new Date(l.data_inicio).getFullYear() === anoSelecionado
   )
 
-  // Anos disponíveis
-  const anos = Array.from(new Set(lotes.map(l => new Date(l.data_inicio).getFullYear()))).sort()
-  if (!anos.includes(anoSelecionado) && anos.length > 0) setAnoSelecionado(anos[anos.length - 1])
-
-  // Dados mensais
   const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
   const dadosMensais = meses.map((mes, idx) => {
     const lotesDoMes = lotes.filter(l => {
@@ -115,7 +112,7 @@ export default function Relatorios() {
             </div>
           ) : (
             <>
-              {/* RESUMO GERAL */}
+              {/* CARDS RESUMO */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16, marginBottom: 24 }}>
                 {[
                   { label: 'Total Lotes', valor: lotesFiltrados.length, tipo: 'numero', cor: '#1a2e0d' },
@@ -133,18 +130,18 @@ export default function Relatorios() {
               </div>
 
               {/* TABELA POR LOTE */}
-              <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflowX: 'auto', marginBottom: 20 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, tableLayout: 'fixed' }}>
                   <thead>
                     <tr style={{ background: '#1a2e0d', color: '#fff' }}>
-                      <th style={th}>Lote</th>
-                      <th style={th}>Período</th>
-                      <th style={th}>Status</th>
-                      <th style={th}>Aves</th>
-                      <th style={th}>Entradas</th>
-                      <th style={th}>Saídas</th>
-                      <th style={th}>Resultado</th>
-                      <th style={th}>Custo/Ave</th>
+                      <th style={{ ...th, width: '10%' }}>Lote</th>
+                      <th style={{ ...th, width: '22%' }}>Período</th>
+                      <th style={{ ...th, width: '12%' }}>Status</th>
+                      <th style={{ ...th, width: '8%', textAlign: 'center' }}>Aves</th>
+                      <th style={{ ...th, width: '13%', textAlign: 'right' }}>Entradas</th>
+                      <th style={{ ...th, width: '13%', textAlign: 'right' }}>Saídas</th>
+                      <th style={{ ...th, width: '13%', textAlign: 'right' }}>Resultado</th>
+                      <th style={{ ...th, width: '9%', textAlign: 'right' }}>Custo/Ave</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -167,10 +164,10 @@ export default function Relatorios() {
                             </span>
                           </td>
                           <td style={{ ...td, textAlign: 'center' }}>{lote.num_aves ? lote.num_aves.toLocaleString() : '-'}</td>
-                          <td style={{ ...td, color: '#16a34a', fontWeight: 700 }}>{format(entr)}</td>
-                          <td style={{ ...td, color: '#dc2626', fontWeight: 700 }}>{format(said)}</td>
-                          <td style={{ ...td, color: resultado >= 0 ? '#16a34a' : '#dc2626', fontWeight: 800 }}>{format(resultado)}</td>
-                          <td style={{ ...td, color: '#8b5e2a', fontWeight: 600 }}>{custoAve ? format(custoAve) : '-'}</td>
+                          <td style={{ ...td, textAlign: 'right', color: '#16a34a', fontWeight: 700 }}>{format(entr)}</td>
+                          <td style={{ ...td, textAlign: 'right', color: '#dc2626', fontWeight: 700 }}>{format(said)}</td>
+                          <td style={{ ...td, textAlign: 'right', color: resultado >= 0 ? '#16a34a' : '#dc2626', fontWeight: 800 }}>{format(resultado)}</td>
+                          <td style={{ ...td, textAlign: 'right', color: '#8b5e2a', fontWeight: 600 }}>{custoAve ? format(custoAve) : '-'}</td>
                         </tr>
                       )
                     })}
@@ -178,9 +175,9 @@ export default function Relatorios() {
                   <tfoot>
                     <tr style={{ background: '#1a2e0d', color: '#fff', fontWeight: 700 }}>
                       <td style={td} colSpan={4}>TOTAL</td>
-                      <td style={{ ...td, color: '#86efac' }}>{format(lotesFiltrados.reduce((a, l) => a + getMov(l.id, 'entrada'), 0))}</td>
-                      <td style={{ ...td, color: '#fca5a5' }}>{format(lotesFiltrados.reduce((a, l) => a + getMov(l.id, 'saida'), 0))}</td>
-                      <td style={{ ...td, color: '#f5c842' }}>{format(lotesFiltrados.reduce((a, l) => a + getMov(l.id, 'entrada') - getMov(l.id, 'saida'), 0))}</td>
+                      <td style={{ ...td, textAlign: 'right', color: '#86efac' }}>{format(lotesFiltrados.reduce((a, l) => a + getMov(l.id, 'entrada'), 0))}</td>
+                      <td style={{ ...td, textAlign: 'right', color: '#fca5a5' }}>{format(lotesFiltrados.reduce((a, l) => a + getMov(l.id, 'saida'), 0))}</td>
+                      <td style={{ ...td, textAlign: 'right', color: '#f5c842' }}>{format(lotesFiltrados.reduce((a, l) => a + getMov(l.id, 'entrada') - getMov(l.id, 'saida'), 0))}</td>
                       <td style={td}>—</td>
                     </tr>
                   </tfoot>
@@ -188,17 +185,17 @@ export default function Relatorios() {
               </div>
 
               {/* DETALHAMENTO POR CATEGORIA */}
-              <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginTop: 20 }}>
+              <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a2e0d', marginBottom: 16 }}>💸 % de Custo por Categoria</h2>
-                <div style={{ overflow: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, tableLayout: 'auto' }}>
                     <thead>
                       <tr style={{ background: '#f8fafc' }}>
-                        <th style={{ ...th, color: '#374151', background: '#f8fafc' }}>Categoria</th>
+                        <th style={{ ...th, color: '#374151', background: '#f8fafc', textAlign: 'left', minWidth: 160 }}>Categoria</th>
                         {lotesFiltrados.map(l => (
-                          <th key={l.id} style={{ ...th, color: '#374151', background: '#f8fafc' }}>Lote #{l.numero}</th>
+                          <th key={l.id} style={{ ...th, color: '#374151', background: '#f8fafc', textAlign: 'right', minWidth: 120 }}>Lote #{l.numero}</th>
                         ))}
-                        <th style={{ ...th, color: '#374151', background: '#f8fafc' }}>Total</th>
+                        <th style={{ ...th, color: '#374151', background: '#f8fafc', textAlign: 'right', minWidth: 120 }}>Total</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -207,7 +204,7 @@ export default function Relatorios() {
                         if (totalCat === 0) return null
                         return (
                           <tr key={cat} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc' }}>
-                            <td style={td}>{cat}</td>
+                            <td style={{ ...td, textAlign: 'left' }}>{cat}</td>
                             {lotesFiltrados.map(l => (
                               <td key={l.id} style={{ ...td, textAlign: 'right' }}>
                                 {getMov(l.id, 'saida', cat) > 0 ? format(getMov(l.id, 'saida', cat)) : '-'}
@@ -229,49 +226,49 @@ export default function Relatorios() {
       {/* ABA — MENSAL */}
       {abaAtiva === 'mensal' && (
         <div>
-          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflowX: 'auto', marginBottom: 20 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, tableLayout: 'fixed' }}>
               <thead>
                 <tr style={{ background: '#1a2e0d', color: '#fff' }}>
-                  <th style={th}>Mês</th>
-                  <th style={th}>Entradas</th>
-                  <th style={th}>Saídas</th>
-                  <th style={th}>Resultado</th>
+                  <th style={{ ...th, width: '25%' }}>Mês</th>
+                  <th style={{ ...th, width: '25%', textAlign: 'right' }}>Entradas</th>
+                  <th style={{ ...th, width: '25%', textAlign: 'right' }}>Saídas</th>
+                  <th style={{ ...th, width: '25%', textAlign: 'right' }}>Resultado</th>
                 </tr>
               </thead>
               <tbody>
                 {dadosMensais.map((d, i) => (
                   <tr key={d.mes} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc', opacity: d.temDados ? 1 : 0.4 }}>
                     <td style={td}><strong>{d.mes}</strong></td>
-                    <td style={{ ...td, color: '#16a34a', fontWeight: d.temDados ? 700 : 400 }}>{format(d.entradas)}</td>
-                    <td style={{ ...td, color: '#dc2626', fontWeight: d.temDados ? 700 : 400 }}>{format(d.saidas)}</td>
-                    <td style={{ ...td, color: d.saldo >= 0 ? '#16a34a' : '#dc2626', fontWeight: 800 }}>{format(d.saldo)}</td>
+                    <td style={{ ...td, textAlign: 'right', color: '#16a34a', fontWeight: d.temDados ? 700 : 400 }}>{format(d.entradas)}</td>
+                    <td style={{ ...td, textAlign: 'right', color: '#dc2626', fontWeight: d.temDados ? 700 : 400 }}>{format(d.saidas)}</td>
+                    <td style={{ ...td, textAlign: 'right', color: d.saldo >= 0 ? '#16a34a' : '#dc2626', fontWeight: 800 }}>{format(d.saldo)}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr style={{ background: '#1a2e0d', color: '#fff', fontWeight: 700 }}>
                   <td style={td}>TOTAL {anoSelecionado}</td>
-                  <td style={{ ...td, color: '#86efac' }}>{format(dadosMensais.reduce((a, d) => a + d.entradas, 0))}</td>
-                  <td style={{ ...td, color: '#fca5a5' }}>{format(dadosMensais.reduce((a, d) => a + d.saidas, 0))}</td>
-                  <td style={{ ...td, color: '#f5c842' }}>{format(dadosMensais.reduce((a, d) => a + d.saldo, 0))}</td>
+                  <td style={{ ...td, textAlign: 'right', color: '#86efac' }}>{format(dadosMensais.reduce((a, d) => a + d.entradas, 0))}</td>
+                  <td style={{ ...td, textAlign: 'right', color: '#fca5a5' }}>{format(dadosMensais.reduce((a, d) => a + d.saidas, 0))}</td>
+                  <td style={{ ...td, textAlign: 'right', color: '#f5c842' }}>{format(dadosMensais.reduce((a, d) => a + d.saldo, 0))}</td>
                 </tr>
               </tfoot>
             </table>
           </div>
 
           {/* DETALHAMENTO MENSAL POR CATEGORIA */}
-          <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginTop: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a2e0d', marginBottom: 16 }}>💸 Saídas por Categoria — {anoSelecionado}</h2>
-            <div style={{ overflow: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, tableLayout: 'auto' }}>
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
-                    <th style={{ ...th, color: '#374151', background: '#f8fafc' }}>Categoria</th>
+                    <th style={{ ...th, color: '#374151', background: '#f8fafc', textAlign: 'left', minWidth: 180 }}>Categoria</th>
                     {dadosMensais.filter(d => d.temDados).map(d => (
-                      <th key={d.mes} style={{ ...th, color: '#374151', background: '#f8fafc' }}>{d.mes.slice(0, 3)}</th>
+                      <th key={d.mes} style={{ ...th, color: '#374151', background: '#f8fafc', textAlign: 'right', minWidth: 100 }}>{d.mes.slice(0, 3)}</th>
                     ))}
-                    <th style={{ ...th, color: '#374151', background: '#f8fafc' }}>Total</th>
+                    <th style={{ ...th, color: '#374151', background: '#f8fafc', textAlign: 'right', minWidth: 120 }}>Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -281,7 +278,7 @@ export default function Relatorios() {
                     if (totalCat === 0) return null
                     return (
                       <tr key={cat} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc' }}>
-                        <td style={td}>{cat}</td>
+                        <td style={{ ...td, textAlign: 'left' }}>{cat}</td>
                         {mesesComDados.map(d => (
                           <td key={d.mes} style={{ ...td, textAlign: 'right' }}>
                             {d.catSaidas[cat] > 0 ? format(d.catSaidas[cat]) : '-'}
@@ -301,5 +298,5 @@ export default function Relatorios() {
   )
 }
 
-const th: React.CSSProperties = { padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 12, whiteSpace: 'nowrap' }
+const th: React.CSSProperties = { padding: '12px 16px', fontWeight: 700, fontSize: 12, whiteSpace: 'nowrap' }
 const td: React.CSSProperties = { padding: '12px 16px', borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap' }
