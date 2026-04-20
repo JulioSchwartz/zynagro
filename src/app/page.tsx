@@ -185,7 +185,7 @@ export default function Home() {
                 borderRadius: i === 0 ? '12px 0 0 0' : i === 1 ? '0 12px 0 0' : i === 2 ? '0' : i === 3 ? '0' : i === 4 ? '0 0 0 12px' : '0 0 12px 0',
                 boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
               }}>
-                <div style={{ display: 'flex', align: 'center', gap: 10, marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                   <span style={{ fontSize: 26 }}>{item.icon}</span>
                   <span style={{ background: `${item.cor}22`, color: item.cor, fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 999, alignSelf: 'center', letterSpacing: 0.5 }}>{item.hora}</span>
                 </div>
@@ -290,7 +290,7 @@ export default function Home() {
       </section>
 
       {/* FOOTER */}
-      <footer style={{ background: '#0a150500', background: '#0f1f07', padding: '28px 32px', borderTop: '1px solid #1a2e0d' }}>
+      <footer style={{ background: '#0f1f07', padding: '28px 32px', borderTop: '1px solid #1a2e0d' }}>
         <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ background: '#f5c842', borderRadius: 6, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
