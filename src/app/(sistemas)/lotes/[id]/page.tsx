@@ -862,9 +862,8 @@ async function salvarSanitario() {
             </div>
           )}
         </div>
-      )}
-   )
-}
+      )
+     }
 
 const labelSt: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }
 const inputSt: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 14, boxSizing: 'border-box' as const, background: '#fff' }
