@@ -863,8 +863,7 @@ async function salvarSanitario() {
           )}
         </div>
       )}
- </div>
-  )
+   )
 }
 
 const labelSt: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }
