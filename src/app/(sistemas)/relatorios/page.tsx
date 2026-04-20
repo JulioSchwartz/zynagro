@@ -98,13 +98,13 @@ export default function Relatorios() {
 
     // Filtro por período (data do lançamento)
     if (filtroMesInicio) {
-      const dataInicio = new Date(filtroMesInicio + '-01')
-      movFiltrados = movFiltrados.filter(m => new Date(m.data) >= dataInicio)
+      const dataInicio = new Date(filtroMesInicio + '-01T12:00:00')
+      movFiltrados = movFiltrados.filter(m => new Date(m.data + 'T12:00:00') >= dataInicio)
     }
     if (filtroMesFim) {
-      const dataFim = new Date(filtroMesFim + '-01')
+      const dataFim = new Date(filtroMesFim + '-01T12:00:00')
       dataFim.setMonth(dataFim.getMonth() + 1)
-      movFiltrados = movFiltrados.filter(m => new Date(m.data) < dataFim)
+      movFiltrados = movFiltrados.filter(m => new Date(m.data + 'T12:00:00') < dataFim)
     }
 
     if (movFiltrados.length === 0) {
