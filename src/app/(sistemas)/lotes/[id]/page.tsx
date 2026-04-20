@@ -202,10 +202,10 @@ export default function DetalheLote() {
   const percMortalidade = lote.num_aves ? ((mortalidadeTotalAcum / lote.num_aves) * 100).toFixed(2) : null
 
   // Dias únicos no diário
-  const diasDiario = [...new Set(diarios.map(d => d.data))].sort().reverse()
+  const diasDiario = Array.from(new Set(diarios.map(d => d.data))).sort().reverse()
 
   // Dias únicos na pesagem
-  const diasPesagem = [...new Set(pesagens.map(d => d.data))].sort().reverse()
+  const diasPesagem = Array.from(new Set(pesagens.map(d => d.data))).sort().reverse()
 
   // Dia atual do lote
   const hoje = new Date()
@@ -237,12 +237,20 @@ export default function DetalheLote() {
             </p>
           )}
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button onClick={() => router.push(`/lotes/${id}/editar`)}
+            style={{ background: '#f5c842', color: '#1a2e0d', border: 'none', padding: '10px 18px', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
+            ✏️ Editar
+          </button>
           {lote.status === 'em_andamento' ? (
             <button onClick={fecharLote}
               style={{ background: '#1a2e0d', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
               ✅ Fechar Lote
             </button>
+          ) : (
+            <span style={{ background: '#dcfce7', color: '#15803d', padding: '8px 16px', borderRadius: 10, fontWeight: 700, fontSize: 13 }}>✅ Lote Fechado</span>
+          )}
+        </div>
           ) : (
             <span style={{ background: '#dcfce7', color: '#15803d', padding: '8px 16px', borderRadius: 10, fontWeight: 700, fontSize: 13 }}>✅ Lote Fechado</span>
           )}
