@@ -459,4 +459,4 @@ export default function Relatorios() {
 const thL: React.CSSProperties = { padding: '12px 16px', fontWeight: 700, fontSize: 12, textAlign: 'left', whiteSpace: 'nowrap' }
 const thR: React.CSSProperties = { padding: '12px 16px', fontWeight: 700, fontSize: 12, textAlign: 'right', whiteSpace: 'nowrap' }
 const tdL: React.CSSProperties = { padding: '12px 16px', borderBottom: '1px solid #f1f5f9', textAlign: 'left', whiteSpace: 'nowrap' }
-const tdR: React.CSSProperties = { padding: '12px 16px', borderBottom: '1px solid #f1f5f9', textAlign: 'right', whiteSpace: 'nowrap' }ce: 'nowrap' }
+const tdR: React.CSSProperties = { padding: '12px 16px', borderBottom: '1px solid #f1f5f9', textAlign: 'right', whiteSpace: 'nowrap' }
