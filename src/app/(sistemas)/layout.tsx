@@ -2,11 +2,14 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useEmpresa } from '@/hooks/useEmpresa'
 
 export default function SistemasLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
+  const { empresaId, loading } = useEmpresa()
   const [menuAberto, setMenuAberto] = useState(false)
+  const [verificado, setVerificado] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -14,17 +17,44 @@ export default function SistemasLayout({ children }: { children: React.ReactNode
     })
   }, [])
 
+  // Verifica primeiro acesso (sem granja) — exceto se já está na página de setup
+  useEffect(() => {
+    if (loading || !empresaId || pathname === '/setup') {
+      setVerificado(true)
+      return
+    }
+
+    supabase.from('granjas').select('id').eq('empresa_id', empresaId).limit(1).then(({ data }) => {
+      if (!data || data.length === 0) {
+        router.push('/setup')
+      }
+      setVerificado(true)
+    })
+  }, [empresaId, loading, pathname])
+
   async function sair() {
     await supabase.auth.signOut()
     router.push('/auth/login')
   }
 
   const menu = [
-    { href: '/dashboard', label: '🏠 Dashboard' },
-    { href: '/granjas',   label: '🐔 Granjas' },
-    { href: '/lotes',     label: '📦 Lotes' },
+    { href: '/dashboard',  label: '🏠 Dashboard' },
+    { href: '/granjas',    label: '🐔 Granjas' },
+    { href: '/lotes',      label: '📦 Lotes' },
     { href: '/relatorios', label: '📊 Relatórios' },
   ]
+
+  // Não renderiza nada enquanto verifica (evita flash de conteúdo)
+  if (!verificado && pathname !== '/setup') {
+    return (
+      <div style={{ minHeight: '100vh', background: '#1a2e0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#7ab648', fontWeight: 700, fontSize: 16 }}>Carregando...</p>
+      </div>
+    )
+  }
+
+  // Página de setup usa layout próprio — sem topbar
+  if (pathname === '/setup') return <>{children}</>
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
@@ -51,7 +81,7 @@ export default function SistemasLayout({ children }: { children: React.ReactNode
                 color: pathname === item.href ? '#f5c842' : '#a7d888',
                 textDecoration: 'none', padding: '8px 14px', borderRadius: 8,
                 fontSize: 14, fontWeight: pathname === item.href ? 700 : 400,
-                background: pathname === item.href ? 'rgba(245,200,66,0.1)' : 'transparent'
+                background: pathname === item.href ? 'rgba(245,200,66,0.1)' : 'transparent',
               }}>
               {item.label}
             </a>
