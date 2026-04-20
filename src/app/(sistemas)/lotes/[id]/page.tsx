@@ -194,7 +194,7 @@ async function salvarSanitario() {
       tipo: sanTipo, produto: sanProduto.trim(),
       dose: sanDose.trim() || null,
       via_aplicacao: sanVia || null,
-      galpao_numero: sanGalpao === 'todos' ? null : Number(sanGalpao),
+      galpao_numero: sanGalpao === 'todos' ? 0 : Number(sanGalpao),
       galpoes_afetados: sanGalpao,
       responsavel: sanResponsavel.trim() || null,
       observacoes: sanObs.trim() || null,
