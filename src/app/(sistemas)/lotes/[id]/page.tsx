@@ -50,6 +50,22 @@ export default function DetalheLote() {
   const [salvandoPesagem, setSalvandoPesagem] = useState(false)
   const [mostrarFormPesagem, setMostrarFormPesagem] = useState(false)
 
+  // Controle sanitário
+  const [sanitarios, setSanitarios] = useState<any[]>([])
+  const [mostrarFormSanitario, setMostrarFormSanitario] = useState(false)
+  const [salvandoSanitario, setSalvandoSanitario] = useState(false)
+  const [sanData, setSanData] = useState(new Date().toISOString().split('T')[0])
+  const [sanTipo, setSanTipo] = useState('')
+  const [sanProduto, setSanProduto] = useState('')
+  const [sanDose, setSanDose] = useState('')
+  const [sanVia, setSanVia] = useState('')
+  const [sanGalpao, setSanGalpao] = useState('todos')
+  const [sanResponsavel, setSanResponsavel] = useState('')
+  const [sanObs, setSanObs] = useState('')
+  const [sanQtdAves, setSanQtdAves] = useState('')
+  const [sanNota, setSanNota] = useState('')
+  const [sanFabricante, setSanFabricante] = useState('')
+
   useEffect(() => {
     if (loading) return
     if (!empresaId) { router.push('/auth/login'); return }
@@ -69,16 +85,18 @@ export default function DetalheLote() {
   }, [lote])
 
   async function carregar() {
-    const [{ data: loteData }, { data: movData }, { data: diarioData }, { data: pesagemData }] = await Promise.all([
+    const [{ data: loteData }, { data: movData }, { data: diarioData }, { data: pesagemData }, { data: sanitarioData }] = await Promise.all([
       supabase.from('lotes').select('*').eq('id', id).eq('empresa_id', empresaId).maybeSingle(),
       supabase.from('lote_movimentos').select('*').eq('lote_id', id).eq('empresa_id', empresaId).order('data', { ascending: false }),
       supabase.from('lote_diario_galpao').select('*').eq('lote_id', id).eq('empresa_id', empresaId).order('data', { ascending: false }),
       supabase.from('lote_pesagem').select('*').eq('lote_id', id).eq('empresa_id', empresaId).order('data', { ascending: false }),
+      supabase.from('lote_sanitario').select('*').eq('lote_id', id).eq('empresa_id', empresaId).order('data', { ascending: false }),
     ])
     setLote(loteData)
     setMovimentos(movData || [])
     setDiarios(diarioData || [])
     setPesagens(pesagemData || [])
+    setSanitarios(sanitarioData || [])
   }
 
   async function lancar() {
@@ -161,6 +179,42 @@ export default function DetalheLote() {
     setMostrarFormPesagem(false)
     await carregar()
     setSalvandoPesagem(false)
+  }
+
+async function salvarSanitario() {
+    if (!sanTipo) return alert('Selecione o tipo de registro')
+    if (!sanProduto.trim()) return alert('Informe o produto/procedimento')
+    setSalvandoSanitario(true)
+    const inicio = new Date(lote.data_inicio + 'T12:00:00')
+    const dataAtual = new Date(sanData + 'T12:00:00')
+    const diaLote = Math.floor((dataAtual.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    const { error } = await supabase.from('lote_sanitario').insert({
+      lote_id: id, empresa_id: empresaId,
+      data: sanData, dia_lote: diaLote,
+      tipo: sanTipo, produto: sanProduto.trim(),
+      dose: sanDose.trim() || null,
+      via_aplicacao: sanVia || null,
+      galpao_numero: sanGalpao === 'todos' ? null : Number(sanGalpao),
+      galpoes_afetados: sanGalpao,
+      responsavel: sanResponsavel.trim() || null,
+      observacoes: sanObs.trim() || null,
+      quantidade_aves: sanQtdAves ? Number(sanQtdAves) : null,
+      numero_nota: sanNota.trim() || null,
+      fabricante: sanFabricante.trim() || null,
+    })
+    if (error) { alert('Erro ao salvar'); setSalvandoSanitario(false); return }
+    setSanTipo(''); setSanProduto(''); setSanDose(''); setSanVia('')
+    setSanGalpao('todos'); setSanResponsavel(''); setSanObs('')
+    setSanQtdAves(''); setSanNota(''); setSanFabricante('')
+    setMostrarFormSanitario(false)
+    await carregar()
+    setSalvandoSanitario(false)
+  }
+
+  async function excluirSanitario(sanId: string) {
+    if (!confirm('Excluir este registro sanitário?')) return
+    await supabase.from('lote_sanitario').delete().eq('id', sanId)
+    carregar()
   }
 
   async function fecharLote() {
@@ -293,6 +347,7 @@ export default function DetalheLote() {
           { key: 'financeiro', label: '💰 Financeiro' },
           { key: 'diario', label: '📔 Diário' },
           { key: 'pesagem', label: '⚖️ Pesagem' },
+          { key: 'sanitario', label: '🧬 Sanitário' },
         ].map(aba => (
           <button key={aba.key} onClick={() => setAbaAtiva(aba.key as any)}
             style={{ padding: '12px 20px', border: 'none', background: 'transparent', fontWeight: 700, fontSize: 14, cursor: 'pointer', borderBottom: abaAtiva === aba.key ? '3px solid #2d6a1a' : '3px solid transparent', color: abaAtiva === aba.key ? '#2d6a1a' : '#94a3b8', marginBottom: -2 }}>
@@ -635,6 +690,178 @@ export default function DetalheLote() {
             </div>
           )}
         </div>
+      )}
+    </div>
+  )
+}
+
+{/* ABA SANITÁRIO */}
+      {abaAtiva === 'sanitario' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a2e0d', margin: 0 }}>🧬 Controle Sanitário</h2>
+              <p style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Vacinas, medicamentos, biosseguridade e controle de pragas</p>
+            </div>
+            {lote.status === 'em_andamento' && (
+              <button onClick={() => setMostrarFormSanitario(!mostrarFormSanitario)}
+                style={{ background: mostrarFormSanitario ? '#64748b' : '#2d6a1a', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
+                {mostrarFormSanitario ? '✕ Cancelar' : '+ Novo Registro'}
+              </button>
+            )}
+          </div>
+
+          {/* FORM SANITÁRIO */}
+          {mostrarFormSanitario && (
+            <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 20 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a2e0d', marginBottom: 16 }}>Novo Registro Sanitário</h3>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14, marginBottom: 14 }}>
+                <div>
+                  <label style={labelSt}>Data *</label>
+                  <input type="date" value={sanData} onChange={e => setSanData(e.target.value)} style={inputSt} />
+                </div>
+                <div>
+                  <label style={labelSt}>Tipo *</label>
+                  <select value={sanTipo} onChange={e => setSanTipo(e.target.value)} style={inputSt}>
+                    <option value="">Selecionar...</option>
+                    <option value="Vacina">💉 Vacina</option>
+                    <option value="Medicamento">💊 Medicamento</option>
+                    <option value="Tratamento">🩺 Tratamento</option>
+                    <option value="Controle de Pragas">🐀 Controle de Pragas</option>
+                    <option value="Desinfecção">🧴 Desinfecção/Biosseguridade</option>
+                    <option value="Descarte de Aves">🗑️ Descarte de Aves Mortas</option>
+                    <option value="Visita Técnica">👨‍⚕️ Visita Técnica</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={labelSt}>Galpão</label>
+                  <select value={sanGalpao} onChange={e => setSanGalpao(e.target.value)} style={inputSt}>
+                    <option value="todos">Todos os galpões</option>
+                    {Array.from({ length: numGalpoes }, (_, i) => i + 1).map(g => (
+                      <option key={g} value={String(g)}>Galpão {g}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelSt}>Responsável</label>
+                  <input value={sanResponsavel} onChange={e => setSanResponsavel(e.target.value)}
+                    placeholder="Nome do responsável" style={inputSt} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14, marginBottom: 14 }}>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={labelSt}>Produto / Procedimento *</label>
+                  <input value={sanProduto} onChange={e => setSanProduto(e.target.value)}
+                    placeholder="Ex: Marek, Gumboro, Amoxicilina..." style={inputSt} />
+                </div>
+                <div>
+                  <label style={labelSt}>Dose</label>
+                  <input value={sanDose} onChange={e => setSanDose(e.target.value)}
+                    placeholder="Ex: 0,2ml/ave" style={inputSt} />
+                </div>
+                <div>
+                  <label style={labelSt}>Via de Aplicação</label>
+                  <select value={sanVia} onChange={e => setSanVia(e.target.value)} style={inputSt}>
+                    <option value="">Selecionar...</option>
+                    <option value="Água de bebida">Água de bebida</option>
+                    <option value="Spray">Spray</option>
+                    <option value="Injetável">Injetável</option>
+                    <option value="Ocular">Ocular</option>
+                    <option value="Ração">Ração</option>
+                    <option value="Ambiental">Ambiental</option>
+                    <option value="Outro">Outro</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14, marginBottom: 14 }}>
+                <div>
+                  <label style={labelSt}>Fabricante</label>
+                  <input value={sanFabricante} onChange={e => setSanFabricante(e.target.value)}
+                    placeholder="Ex: MSD, Zoetis..." style={inputSt} />
+                </div>
+                <div>
+                  <label style={labelSt}>Nº da Nota / Lote do Produto</label>
+                  <input value={sanNota} onChange={e => setSanNota(e.target.value)}
+                    placeholder="Ex: NF 001234" style={inputSt} />
+                </div>
+                <div>
+                  <label style={labelSt}>Qtd. Aves Tratadas</label>
+                  <input type="number" value={sanQtdAves} onChange={e => setSanQtdAves(e.target.value)}
+                    placeholder="Ex: 32000" style={inputSt} />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelSt}>Observações</label>
+                <textarea value={sanObs} onChange={e => setSanObs(e.target.value)}
+                  placeholder="Informações adicionais, reações observadas, etc..."
+                  rows={3} style={{ ...inputSt, resize: 'vertical' as const, fontFamily: 'inherit' }} />
+              </div>
+
+              <button onClick={salvarSanitario} disabled={salvandoSanitario}
+                style={{ background: '#2d6a1a', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}>
+                {salvandoSanitario ? 'Salvando...' : '✓ Salvar Registro'}
+              </button>
+            </div>
+          )}
+
+          {/* HISTÓRICO SANITÁRIO */}
+          {sanitarios.length === 0 ? (
+            <div style={{ background: '#f0fdf4', border: '1px dashed #86efac', borderRadius: 16, padding: 30, textAlign: 'center' }}>
+              <p style={{ color: '#16a34a', fontWeight: 600 }}>Nenhum registro sanitário ainda</p>
+              <p style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>Registre vacinas, medicamentos e procedimentos sanitários</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {sanitarios.map(s => {
+                const corTipo: Record<string, string> = {
+                  'Vacina': '#2563eb',
+                  'Medicamento': '#7c3aed',
+                  'Tratamento': '#0891b2',
+                  'Controle de Pragas': '#92400e',
+                  'Desinfecção': '#065f46',
+                  'Descarte de Aves': '#dc2626',
+                  'Visita Técnica': '#1a2e0d',
+                }
+                const cor = corTipo[s.tipo] || '#64748b'
+                return (
+                  <div key={s.id} style={{ background: '#fff', borderRadius: 14, padding: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', borderLeft: `4px solid ${cor}` }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                          <span style={{ background: cor + '20', color: cor, fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 999 }}>
+                            {s.tipo}
+                          </span>
+                          <p style={{ fontWeight: 700, color: '#1a2e0d', fontSize: 15 }}>{s.produto}</p>
+                          {s.dia_lote && <span style={{ background: '#fef3c7', color: '#92400e', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999 }}>Dia {s.dia_lote}</span>}
+                        </div>
+                        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 12, color: '#64748b' }}>
+                          <span>📅 {new Date(s.data + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
+                          {s.galpoes_afetados && <span>🏗️ {s.galpoes_afetados === 'todos' ? 'Todos os galpões' : `Galpão ${s.galpoes_afetados}`}</span>}
+                          {s.dose && <span>💊 {s.dose}</span>}
+                          {s.via_aplicacao && <span>🔬 {s.via_aplicacao}</span>}
+                          {s.responsavel && <span>👤 {s.responsavel}</span>}
+                          {s.fabricante && <span>🏭 {s.fabricante}</span>}
+                          {s.quantidade_aves && <span>🐔 {Number(s.quantidade_aves).toLocaleString()} aves</span>}
+                        </div>
+                        {s.observacoes && (
+                          <p style={{ fontSize: 12, color: '#374151', marginTop: 8, padding: '8px 12px', background: '#f8fafc', borderRadius: 8 }}>
+                            📝 {s.observacoes}
+                          </p>
+                        )}
+                      </div>
+                      <button onClick={() => excluirSanitario(s.id)}
+                        style={{ background: 'transparent', border: 'none', color: '#cbd5e1', cursor: 'pointer', fontSize: 16 }}>✕</button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+       </div>
       )}
     </div>
   )
