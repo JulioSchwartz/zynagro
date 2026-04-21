@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useEmpresa } from '@/hooks/useEmpresa'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 const CATEGORIAS_ENTRADA = [
   'Pagamento Integradora',
@@ -27,7 +28,7 @@ export default function DetalheLote() {
   const [diarios, setDiarios] = useState<any[]>([])
   const [pesagens, setPesagens] = useState<any[]>([])
   const [salvando, setSalvando] = useState(false)
-  const [abaAtiva, setAbaAtiva] = useState<'financeiro' | 'diario' | 'pesagem' | 'sanitario'>('financeiro')
+  const [abaAtiva, setAbaAtiva] = useState<'financeiro' | 'diario' | 'pesagem' | 'sanitario' | 'graficos'>('financeiro')
   const [abaFinanceiro, setAbaFinanceiro] = useState<'entrada' | 'saida'>('entrada')
 
   // Form financeiro
@@ -341,13 +342,30 @@ async function salvarSanitario() {
         )}
       </div>
 
+      {/* ALERTA MORTALIDADE */}
+      {percMortalidade !== null && Number(percMortalidade) > 3 && (
+        <div style={{ background: '#fef2f2', border: '2px solid #fca5a5', borderRadius: 12, padding: '14px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 24 }}>⚠️</span>
+          <div>
+            <p style={{ color: '#dc2626', fontWeight: 800, fontSize: 15, margin: 0 }}>
+              Alerta: Mortalidade acima do limite!
+            </p>
+            <p style={{ color: '#991b1b', fontSize: 13, margin: '2px 0 0' }}>
+              Mortalidade atual: <strong>{percMortalidade}%</strong> — limite recomendado: 3%. 
+              Total de {mortalidadeTotalAcum.toLocaleString()} aves perdidas.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ABAS PRINCIPAIS */}
-      <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', marginBottom: 24 }}>
+      <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', marginBottom: 24, overflowX: 'auto' }}>
         {[
           { key: 'financeiro', label: '💰 Financeiro' },
           { key: 'diario', label: '📔 Diário' },
           { key: 'pesagem', label: '⚖️ Pesagem' },
           { key: 'sanitario', label: '🧬 Sanitário' },
+          { key: 'graficos', label: '📈 Gráficos' },
         ].map(aba => (
           <button key={aba.key} onClick={() => setAbaAtiva(aba.key as any)}
             style={{ padding: '12px 20px', border: 'none', background: 'transparent', fontWeight: 700, fontSize: 14, cursor: 'pointer', borderBottom: abaAtiva === aba.key ? '3px solid #2d6a1a' : '3px solid transparent', color: abaAtiva === aba.key ? '#2d6a1a' : '#94a3b8', marginBottom: -2 }}>
@@ -860,6 +878,140 @@ async function salvarSanitario() {
           )}
         </div>
       )}
+
+      {/* ABA GRÁFICOS */}
+      {abaAtiva === 'graficos' && (() => {
+        // Dados de mortalidade acumulada por dia
+        const diasOrdenados = Array.from(new Set(diarios.map(d => d.data))).sort()
+        let acum = 0
+        const dadosMortalidade = diasOrdenados.map(data => {
+          const mortDia = diarios.filter(d => d.data === data).reduce((a, d) => a + (d.mortalidade || 0), 0)
+          acum += mortDia
+          const diaNum = Math.floor((new Date(data + 'T12:00:00').getTime() - new Date(lote.data_inicio + 'T12:00:00').getTime()) / (1000 * 60 * 60 * 24)) + 1
+          const perc = lote.num_aves ? Number(((acum / lote.num_aves) * 100).toFixed(2)) : null
+          return { dia: `Dia ${diaNum}`, mortalidade: mortDia, mortalidadeAcum: acum, percentual: perc }
+        })
+
+        // Dados de peso médio por dia de pesagem
+        const diasPesOrdenados = Array.from(new Set(pesagens.map(p => p.data))).sort()
+        const dadosPeso = diasPesOrdenados.map(data => {
+          const pesosDia = pesagens.filter(p => p.data === data).map(p => Number(p.peso_medio)).filter(v => v > 0)
+          const mediaDia = pesosDia.length > 0 ? Number((pesosDia.reduce((a, v) => a + v, 0) / pesosDia.length).toFixed(3)) : null
+          const diaNum = Math.floor((new Date(data + 'T12:00:00').getTime() - new Date(lote.data_inicio + 'T12:00:00').getTime()) / (1000 * 60 * 60 * 24)) + 1
+          return { dia: `Dia ${diaNum}`, pesoMedio: mediaDia }
+        })
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+
+            {/* GRÁFICO MORTALIDADE */}
+            <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 8 }}>
+                <div>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a2e0d', margin: 0 }}>📉 Evolução da Mortalidade</h3>
+                  <p style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>Mortalidade diária e acumulada ao longo do lote</p>
+                </div>
+                {percMortalidade && (
+                  <span style={{ background: Number(percMortalidade) > 3 ? '#fef2f2' : '#f0fdf4', color: Number(percMortalidade) > 3 ? '#dc2626' : '#16a34a', padding: '6px 14px', borderRadius: 999, fontWeight: 700, fontSize: 13, border: `1px solid ${Number(percMortalidade) > 3 ? '#fca5a5' : '#86efac'}` }}>
+                    {Number(percMortalidade) > 3 ? '⚠️' : '✅'} {percMortalidade}% total
+                  </span>
+                )}
+              </div>
+              {dadosMortalidade.length === 0 ? (
+                <div style={{ background: '#f8fafc', borderRadius: 12, padding: 32, textAlign: 'center' }}>
+                  <p style={{ color: '#94a3b8', fontSize: 14 }}>Nenhum registro no diário ainda</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={dadosMortalidade} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="dia" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                    <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#94a3b8' }} unit="%" />
+                    <Tooltip formatter={(v: any, name: string) => {
+                      if (name === 'Mortalidade diária') return [v + ' aves', name]
+                      if (name === 'Acumulada') return [v + ' aves', name]
+                      if (name === '% Acumulada') return [v + '%', name]
+                      return [v, name]
+                    }} />
+                    <Legend />
+                    <Line yAxisId="left" type="monotone" dataKey="mortalidade" name="Mortalidade diária" stroke="#f97316" strokeWidth={2} dot={{ r: 3 }} />
+                    <Line yAxisId="left" type="monotone" dataKey="mortalidadeAcum" name="Acumulada" stroke="#dc2626" strokeWidth={2} dot={{ r: 3 }} strokeDasharray="5 5" />
+                    {lote.num_aves && <Line yAxisId="right" type="monotone" dataKey="percentual" name="% Acumulada" stroke="#7c3aed" strokeWidth={2} dot={{ r: 3 }} />}
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+              {/* Linha de limite */}
+              {lote.num_aves && (
+                <p style={{ textAlign: 'center', fontSize: 12, color: '#94a3b8', marginTop: 8 }}>
+                  Limite recomendado: <strong style={{ color: '#dc2626' }}>3%</strong> ({Math.round(lote.num_aves * 0.03).toLocaleString()} aves)
+                </p>
+              )}
+            </div>
+
+            {/* GRÁFICO PESO */}
+            <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+              <div style={{ marginBottom: 20 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a2e0d', margin: 0 }}>⚖️ Evolução do Peso Médio</h3>
+                <p style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>Peso médio do lote por pesagem semanal (kg)</p>
+              </div>
+              {dadosPeso.length === 0 ? (
+                <div style={{ background: '#f8fafc', borderRadius: 12, padding: 32, textAlign: 'center' }}>
+                  <p style={{ color: '#94a3b8', fontSize: 14 }}>Nenhuma pesagem registrada ainda</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={dadosPeso} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="dia" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                    <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} unit=" kg" />
+                    <Tooltip formatter={(v: any) => [v + ' kg', 'Peso médio']} />
+                    <Legend />
+                    <Line type="monotone" dataKey="pesoMedio" name="Peso médio (kg)" stroke="#7ab648" strokeWidth={3} dot={{ r: 5, fill: '#7ab648' }} activeDot={{ r: 7 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+
+            {/* TABELA RESUMO DIÁRIO */}
+            {dadosMortalidade.length > 0 && (
+              <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a2e0d', margin: '0 0 16px' }}>📋 Resumo por Dia</h3>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ background: '#1a2e0d', color: '#fff' }}>
+                        <th style={{ padding: '10px 14px', textAlign: 'left', borderRadius: '8px 0 0 0' }}>Dia</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'right' }}>Mortalidade</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'right' }}>Acumulada</th>
+                        {lote.num_aves && <th style={{ padding: '10px 14px', textAlign: 'right', borderRadius: '0 8px 0 0' }}>%</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dadosMortalidade.map((d, i) => (
+                        <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '10px 14px', fontWeight: 600, color: '#1a2e0d' }}>{d.dia}</td>
+                          <td style={{ padding: '10px 14px', textAlign: 'right', color: d.mortalidade > 0 ? '#dc2626' : '#94a3b8' }}>
+                            {d.mortalidade > 0 ? d.mortalidade.toLocaleString() : '—'}
+                          </td>
+                          <td style={{ padding: '10px 14px', textAlign: 'right', color: '#374151', fontWeight: 600 }}>
+                            {d.mortalidadeAcum.toLocaleString()}
+                          </td>
+                          {lote.num_aves && (
+                            <td style={{ padding: '10px 14px', textAlign: 'right', color: Number(d.percentual) > 3 ? '#dc2626' : '#16a34a', fontWeight: 700 }}>
+                              {d.percentual}%
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
     </div>
   )
 }

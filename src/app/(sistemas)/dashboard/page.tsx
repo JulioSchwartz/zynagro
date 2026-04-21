@@ -9,6 +9,7 @@ export default function Dashboard() {
   const router = useRouter()
   const [lotes, setLotes] = useState<any[]>([])
   const [movimentos, setMovimentos] = useState<any[]>([])
+  const [diarios, setDiarios] = useState<any[]>([])
 
   useEffect(() => {
     if (loading) return
@@ -17,12 +18,14 @@ export default function Dashboard() {
   }, [empresaId, loading])
 
   async function carregar() {
-    const [{ data: lotesData }, { data: movData }] = await Promise.all([
+    const [{ data: lotesData }, { data: movData }, { data: diariosData }] = await Promise.all([
       supabase.from('lotes').select('*').eq('empresa_id', empresaId).order('criado_em', { ascending: false }),
       supabase.from('lote_movimentos').select('*').eq('empresa_id', empresaId),
+      supabase.from('lote_diario_galpao').select('*').eq('empresa_id', empresaId),
     ])
     setLotes(lotesData || [])
     setMovimentos(movData || [])
+    setDiarios(diariosData || [])
   }
 
   const loteAtivo = lotes.find(l => l.status === 'em_andamento')
@@ -30,6 +33,15 @@ export default function Dashboard() {
   const totalEntradas = movimentos.filter(m => m.tipo === 'entrada').reduce((a, m) => a + Number(m.valor), 0)
   const totalSaidas = movimentos.filter(m => m.tipo === 'saida').reduce((a, m) => a + Number(m.valor), 0)
   const saldoGeral = totalEntradas - totalSaidas
+
+  // Mortalidade do lote ativo
+  const mortalidadeLoteAtivo = loteAtivo
+    ? diarios.filter(d => d.lote_id === loteAtivo.id).reduce((a, d) => a + (d.mortalidade || 0), 0)
+    : 0
+  const percMortAtivo = loteAtivo?.num_aves
+    ? Number(((mortalidadeLoteAtivo / loteAtivo.num_aves) * 100).toFixed(2))
+    : null
+  const alertaMortalidade = percMortAtivo !== null && percMortAtivo > 3
 
   function format(v: number) {
     return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -43,6 +55,27 @@ export default function Dashboard() {
         <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1a2e0d', margin: 0 }}>🏠 Dashboard</h1>
         <p style={{ color: '#64748b', marginTop: 4 }}>Visão geral da granja</p>
       </div>
+
+      {/* ALERTA MORTALIDADE */}
+      {alertaMortalidade && (
+        <div style={{ background: '#fef2f2', border: '2px solid #fca5a5', borderRadius: 14, padding: '16px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 28 }}>⚠️</span>
+            <div>
+              <p style={{ color: '#dc2626', fontWeight: 800, fontSize: 15, margin: 0 }}>
+                Alerta: Mortalidade acima do limite no Lote #{loteAtivo?.numero}!
+              </p>
+              <p style={{ color: '#991b1b', fontSize: 13, margin: '2px 0 0' }}>
+                Mortalidade atual: <strong>{percMortAtivo}%</strong> (limite: 3%) · {mortalidadeLoteAtivo.toLocaleString()} aves perdidas
+              </p>
+            </div>
+          </div>
+          <button onClick={() => router.push(`/lotes/${loteAtivo?.id}`)}
+            style={{ background: '#dc2626', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap' }}>
+            Ver lote →
+          </button>
+        </div>
+      )}
 
       {/* CARDS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
