@@ -896,9 +896,9 @@ async function salvarSanitario() {
         const diasPesOrdenados = Array.from(new Set(pesagens.map(p => p.data))).sort()
         const dadosPeso = diasPesOrdenados.map(data => {
           const pesosDia = pesagens.filter(p => p.data === data).map(p => Number(p.peso_medio)).filter(v => v > 0)
-          const mediaDia = pesosDia.length > 0 ? Number((pesosDia.reduce((a, v) => a + v, 0) / pesosDia.length).toFixed(3)) : null
+          const mediaGramas = pesosDia.length > 0 ? Math.round(pesosDia.reduce((a, v) => a + v, 0) / pesosDia.length) : null
           const diaNum = Math.floor((new Date(data + 'T12:00:00').getTime() - new Date(lote.data_inicio + 'T12:00:00').getTime()) / (1000 * 60 * 60 * 24)) + 1
-          return { dia: `Dia ${diaNum}`, pesoMedio: mediaDia }
+          return { dia: `Dia ${diaNum}`, pesoMedio: mediaGramas }
         })
 
         return (
@@ -953,7 +953,7 @@ async function salvarSanitario() {
             <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
               <div style={{ marginBottom: 20 }}>
                 <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a2e0d', margin: 0 }}>⚖️ Evolução do Peso Médio</h3>
-                <p style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>Peso médio do lote por pesagem semanal (kg)</p>
+                <p style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>Peso médio do lote por pesagem semanal (g)</p>
               </div>
               {dadosPeso.length === 0 ? (
                 <div style={{ background: '#f8fafc', borderRadius: 12, padding: 32, textAlign: 'center' }}>
@@ -964,10 +964,10 @@ async function salvarSanitario() {
                   <LineChart data={dadosPeso} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="dia" tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                    <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} unit=" kg" />
-                    <Tooltip formatter={(v: any) => [v + ' kg', 'Peso médio']} />
+                    <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} unit=" g" />
+                    <Tooltip formatter={(v: any) => [v + ' g', 'Peso médio']} />
                     <Legend />
-                    <Line type="monotone" dataKey="pesoMedio" name="Peso médio (kg)" stroke="#7ab648" strokeWidth={3} dot={{ r: 5, fill: '#7ab648' }} activeDot={{ r: 7 }} />
+                    <Line type="monotone" dataKey="pesoMedio" name="Peso médio (g)" stroke="#7ab648" strokeWidth={3} dot={{ r: 5, fill: '#7ab648' }} activeDot={{ r: 7 }} />
                   </LineChart>
                 </ResponsiveContainer>
               )}
