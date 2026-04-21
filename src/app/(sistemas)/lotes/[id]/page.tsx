@@ -928,7 +928,7 @@ async function salvarSanitario() {
                     <XAxis dataKey="dia" tick={{ fontSize: 11, fill: '#94a3b8' }} />
                     <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#94a3b8' }} />
                     <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#94a3b8' }} unit="%" />
-                    <Tooltip formatter={(v: any, name: string) => {
+                    <Tooltip formatter={(v: any, name: any) => {
                       if (name === 'Mortalidade diária') return [v + ' aves', name]
                       if (name === 'Acumulada') return [v + ' aves', name]
                       if (name === '% Acumulada') return [v + '%', name]
