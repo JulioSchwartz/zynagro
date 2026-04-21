@@ -127,18 +127,19 @@ export default function DetalheLote() {
     if (!temDado) return alert('Informe pelo menos um dado para registrar')
 
     setSalvandoDiario(true)
+    const loteId = Array.isArray(id) ? id[0] : id
     const inicio = new Date(lote.data_inicio + 'T12:00:00')
     const dataAtual = new Date(diarioData + 'T12:00:00')
     const diaLote = Math.floor((dataAtual.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1
 
     // Verifica se já existe registro para essa data e galpão
     await supabase.from('lote_diario_galpao').delete()
-      .eq('lote_id', id).eq('data', diarioData)
+      .eq('lote_id', loteId).eq('data', diarioData)
 
     for (const g of diarioGalpoes) {
       if (!g.mortalidade && !g.consumo_racao && !g.temp_min && !g.temp_max) continue
       await supabase.from('lote_diario_galpao').insert({
-        lote_id: id, empresa_id: empresaId,
+        lote_id: loteId, empresa_id: empresaId,
         data: diarioData, dia_lote: diaLote,
         galpao_numero: g.numero,
         mortalidade: Number(g.mortalidade) || 0,
@@ -158,17 +159,18 @@ export default function DetalheLote() {
     if (!temDado) return alert('Informe o peso médio de pelo menos um galpão')
 
     setSalvandoPesagem(true)
+    const loteId = Array.isArray(id) ? id[0] : id
     const inicio = new Date(lote.data_inicio + 'T12:00:00')
     const dataAtual = new Date(pesagemData + 'T12:00:00')
     const diaLote = Math.floor((dataAtual.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1
 
     await supabase.from('lote_pesagem').delete()
-      .eq('lote_id', id).eq('data', pesagemData)
+      .eq('lote_id', loteId).eq('data', pesagemData)
 
     for (const g of pesagemGalpoes) {
       if (!g.peso_medio) continue
       await supabase.from('lote_pesagem').insert({
-        lote_id: id, empresa_id: empresaId,
+        lote_id: loteId, empresa_id: empresaId,
         data: pesagemData, dia_lote: diaLote,
         galpao_numero: g.numero,
         peso_medio: Number(g.peso_medio),
@@ -185,16 +187,14 @@ async function salvarSanitario() {
     if (!sanTipo) return alert('Selecione o tipo de registro')
     if (!sanProduto.trim()) return alert('Informe o produto/procedimento')
     setSalvandoSanitario(true)
-    const inicio = new Date(lote.data_inicio + 'T12:00:00')
-    const dataAtual = new Date(sanData + 'T12:00:00')
-    const diaLote = Math.floor((dataAtual.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    const loteId = Array.isArray(id) ? id[0] : id
     const { error } = await supabase.from('lote_sanitario').insert({
-      lote_id: id, empresa_id: empresaId,
-      data: sanData, dia_lote: diaLote,
+      lote_id: loteId, empresa_id: empresaId,
+      data: sanData,
       tipo: sanTipo, produto: sanProduto.trim(),
       dose: sanDose.trim() || null,
       via_aplicacao: sanVia || null,
-      galpao_numero: sanGalpao === 'todos' ? 0 : Number(sanGalpao),
+      galpao_numero: sanGalpao === 'todos' ? null : Number(sanGalpao),
       galpoes_afetados: sanGalpao,
       responsavel: sanResponsavel.trim() || null,
       observacoes: sanObs.trim() || null,
