@@ -4,6 +4,8 @@ import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useEmpresa } from '@/hooks/useEmpresa'
 
+const MANUAL_URL = 'https://cpyvksnsfihybemvxvap.supabase.co/storage/v1/object/public/manuais/zynagro_manual.pdf'
+
 export default function SistemasLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -17,7 +19,6 @@ export default function SistemasLayout({ children }: { children: React.ReactNode
     })
   }, [])
 
-  // Verifica primeiro acesso (sem granja) — exceto se já está na página de setup
   useEffect(() => {
     if (loading || !empresaId || pathname === '/setup') {
       setVerificado(true)
@@ -44,7 +45,6 @@ export default function SistemasLayout({ children }: { children: React.ReactNode
     { href: '/relatorios', label: '📊 Relatórios' },
   ]
 
-  // Não renderiza nada enquanto verifica (evita flash de conteúdo)
   if (!verificado && pathname !== '/setup') {
     return (
       <div style={{ minHeight: '100vh', background: '#1a2e0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -53,7 +53,6 @@ export default function SistemasLayout({ children }: { children: React.ReactNode
     )
   }
 
-  // Página de setup usa layout próprio — sem topbar
   if (pathname === '/setup') return <>{children}</>
 
   return (
@@ -86,6 +85,13 @@ export default function SistemasLayout({ children }: { children: React.ReactNode
               {item.label}
             </a>
           ))}
+          <a href={MANUAL_URL} target="_blank" rel="noopener noreferrer"
+            style={{
+              color: '#a7d888', textDecoration: 'none', padding: '8px 14px',
+              borderRadius: 8, fontSize: 14, fontWeight: 400, background: 'transparent',
+            }}>
+            &#128214; Manual
+          </a>
         </nav>
 
         <button onClick={sair}
