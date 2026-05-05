@@ -15,11 +15,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Email e senha são obrigatórios' }, { status: 400 })
     }
 
-    // 1. Cria o usuário no auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: false,
+      email, password, email_confirm: false,
     })
 
     if (authError) {
@@ -34,7 +31,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Erro ao criar usuário.' }, { status: 500 })
     }
 
-    // 2. Cria a empresa (granja)
     const { data: empresa, error: erroEmpresa } = await supabaseAdmin
       .from('empresas')
       .insert({
@@ -43,23 +39,18 @@ export async function POST(req: Request) {
         status: 'trial',
         criado_em: new Date().toISOString(),
       })
-      .select()
-      .single()
+      .select().single()
 
     if (erroEmpresa || !empresa) {
       await supabaseAdmin.auth.admin.deleteUser(user.id)
       return NextResponse.json({ error: 'Erro ao criar empresa.' }, { status: 500 })
     }
 
-    // 3. Cria o registro na tabela usuarios
     const { error: erroUsuario } = await supabaseAdmin
       .from('usuarios')
       .insert({
-        email,
-        user_id: user.id,
-        empresa_id: empresa.id,
-        perfil: 'admin',
-        criado_em: new Date().toISOString(),
+        email, user_id: user.id, empresa_id: empresa.id,
+        perfil: 'admin', criado_em: new Date().toISOString(),
       })
 
     if (erroUsuario) {
@@ -68,13 +59,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Erro ao vincular usuário.' }, { status: 500 })
     }
 
-    // 4. Notifica você (Júlio) sobre o novo cadastro
+    const resend = new Resend(process.env.RESEND_API_KEY!)
+
+    // Email de boas-vindas para o usuário
     try {
-      const resend = new Resend(process.env.RESEND_API_KEY!)
       await resend.emails.send({
-        from: 'Zynagro <noreply@zynplan.com.br>',
-        to: ['j.ulioschwartz@hotmail.com'],
-        subject: `🌾 Novo cadastro Zynagro: ${nomeEmpresa || email}`,
+        from: 'Zynagro <noreply@zyncompany.com.br>',
+        to: [email],
+        subject: `Bem-vindo à Zynagro, ${nomeEmpresa || ''}!`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 32px; background: #1a2e0d; color: #fff; border-radius: 12px;">
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 28px;">
@@ -86,45 +78,45 @@ export async function POST(req: Request) {
                 <span style="color: #7ab648; font-size: 11px; letter-spacing: 2px;">GESTÃO DO CAMPO</span>
               </div>
             </div>
-
-            <h2 style="color: #f5c842; margin-bottom: 24px; font-size: 20px;">🌾 Novo cadastro na Zynagro!</h2>
-
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; color: #7ab648; width: 140px; font-size: 13px;">Nome</td>
-                <td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; font-weight: 600; font-size: 14px;">${nomeUsuario || '—'}</td>
-              </tr>
-              <tr>
-                <td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; color: #7ab648; font-size: 13px;">Granja</td>
-                <td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; font-weight: 600; font-size: 14px;">${nomeEmpresa || '—'}</td>
-              </tr>
-              <tr>
-                <td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; color: #7ab648; font-size: 13px;">E-mail</td>
-                <td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; font-weight: 600; font-size: 14px;">${email}</td>
-              </tr>
-              <tr>
-                <td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; color: #7ab648; font-size: 13px;">Plano</td>
-                <td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; font-weight: 600; font-size: 14px;">Trial (14 dias grátis)</td>
-              </tr>
-              <tr>
-                <td style="padding: 12px 0; color: #7ab648; font-size: 13px;">Data/hora</td>
-                <td style="padding: 12px 0; font-weight: 600; font-size: 14px;">${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</td>
-              </tr>
+            <h2 style="color: #f5c842; margin-bottom: 8px;">Bem-vindo à Zynagro! 🌾</h2>
+            <p style="color: #94a3b8; margin-bottom: 24px;">Sua conta foi criada com sucesso. Explore a plataforma e comece a gerenciar sua granja com mais controle.</p>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+              <tr><td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; color: #7ab648; font-size: 13px; width: 140px;">Granja</td><td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; font-weight: 600;">${nomeEmpresa || '—'}</td></tr>
+              <tr><td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; color: #7ab648; font-size: 13px;">E-mail</td><td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; font-weight: 600;">${email}</td></tr>
+              <tr><td style="padding: 12px 0; color: #7ab648; font-size: 13px;">Plano</td><td style="padding: 12px 0; font-weight: 600;">Trial (14 dias grátis)</td></tr>
             </table>
-
-            <div style="margin-top: 28px; background: rgba(122,182,72,0.15); border: 1px solid rgba(122,182,72,0.3); border-radius: 10px; padding: 14px 18px;">
-              <p style="margin: 0; color: #7ab648; font-size: 13px;">💡 Entre em contato para dar boas-vindas e garantir uma boa experiência!</p>
-            </div>
-
-            <p style="margin-top: 32px; color: #475569; font-size: 11px; text-align: center;">
-              Zynagro · parte do ecossistema Zyncompany
-            </p>
+            <a href="https://zynagro.vercel.app/login"
+               style="display: inline-block; background: #f5c842; color: #1a2e0d; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 700;">
+              Acessar minha conta →
+            </a>
+            <p style="color: #475569; font-size: 13px; margin-top: 32px;">Qualquer dúvida, fale com a gente em <a href="https://zyncompany.com.br/contato" style="color: #7ab648;">zyncompany.com.br/contato</a>.</p>
           </div>
         `,
       })
     } catch (emailErr) {
-      // Não falha o cadastro se o email de notificação falhar
-      console.error('Erro ao enviar notificação de cadastro:', emailErr)
+      console.error('Erro ao enviar boas-vindas:', emailErr)
+    }
+
+    // Notificação interna
+    try {
+      await resend.emails.send({
+        from: 'Zynagro <noreply@zyncompany.com.br>',
+        to: ['suportezynagro@gmail.com'],
+        subject: `🌾 Novo cadastro Zynagro: ${nomeEmpresa || email}`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 32px; background: #1a2e0d; color: #fff; border-radius: 12px;">
+            <h2 style="color: #f5c842; margin-bottom: 24px;">🌾 Novo cadastro na Zynagro!</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr><td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; color: #7ab648; font-size: 13px; width: 140px;">Nome</td><td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; font-weight: 600;">${nomeUsuario || '—'}</td></tr>
+              <tr><td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; color: #7ab648; font-size: 13px;">Granja</td><td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; font-weight: 600;">${nomeEmpresa || '—'}</td></tr>
+              <tr><td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; color: #7ab648; font-size: 13px;">E-mail</td><td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; font-weight: 600;">${email}</td></tr>
+              <tr><td style="padding: 12px 0; color: #7ab648; font-size: 13px;">Data/hora</td><td style="padding: 12px 0; font-weight: 600;">${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</td></tr>
+            </table>
+          </div>
+        `,
+      })
+    } catch (emailErr) {
+      console.error('Erro ao enviar notificação:', emailErr)
     }
 
     return NextResponse.json({ success: true })
