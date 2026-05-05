@@ -37,7 +37,7 @@ export async function POST(req: Request) {
         nome: nomeEmpresa?.trim() || email,
         plano: 'basico',
         status: 'trial',
-        criado_em: new Date().toISOString(),
+        created_at: new Date().toISOString(),
       })
       .select().single()
 
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
               <tr><td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; color: #7ab648; font-size: 13px;">E-mail</td><td style="padding: 12px 0; border-bottom: 1px solid #2d4a1a; font-weight: 600;">${email}</td></tr>
               <tr><td style="padding: 12px 0; color: #7ab648; font-size: 13px;">Plano</td><td style="padding: 12px 0; font-weight: 600;">Trial (14 dias grátis)</td></tr>
             </table>
-            <a href="https://zynagro.vercel.app/login"
+            <a href="https://zynagro.vercel.app/auth/login"
                style="display: inline-block; background: #f5c842; color: #1a2e0d; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 700;">
               Acessar minha conta →
             </a>
