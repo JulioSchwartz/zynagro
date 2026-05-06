@@ -326,7 +326,7 @@ export default function Home() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 2 }}>
             {[
-              { nome: 'BRF', detalhe: 'Lote 28 dias · Castro-PR' },
+              { nome: 'BRF', detalhe: 'Sul e Centro-Oeste' },
               { nome: 'Aurora', detalhe: 'Sul e Centro-Oeste' },
               { nome: 'Copacol', detalhe: 'Paraná' },
               { nome: 'Globoaves', detalhe: 'Sul do Brasil' },
@@ -378,7 +378,7 @@ export default function Home() {
                 </div>
                 <div>
                   <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, margin: 0, letterSpacing: 2 }}>PLATAFORMA</p>
-                  <p style={{ color: '#fff', fontSize: 14, fontWeight: 600, margin: '2px 0 0' }}>zynagro.vercel.app</p>
+                  <p style={{ color: '#fff', fontSize: 14, fontWeight: 600, margin: '2px 0 0' }}>zynagro.com.br</p>
                 </div>
               </div>
             </div>
@@ -457,7 +457,7 @@ export default function Home() {
             <div>
               <p style={{ color: '#fff', fontWeight: 700, fontSize: 12, letterSpacing: 3, marginBottom: 16 }}>CONTATO</p>
               <p style={{ color: '#475569', fontSize: 13, margin: '0 0 8px' }}>suportezynagro@gmail.com</p>
-              <p style={{ color: '#475569', fontSize: 13, margin: '0 0 24px' }}>zynagro.vercel.app</p>
+              <p style={{ color: '#475569', fontSize: 13, margin: '0 0 24px' }}>zynagro.com.br</p>
               <p style={{ color: '#334155', fontSize: 11, letterSpacing: 1 }}>ECOSSISTEMA</p>
               <p style={{ color: '#7ab648', fontSize: 13, margin: '4px 0 0', fontWeight: 600 }}>Zyncompany</p>
             </div>
