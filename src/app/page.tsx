@@ -90,8 +90,8 @@ export default function Home() {
         <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%', position: 'relative', paddingLeft: 28 }}>
           <div style={{ maxWidth: 660 }}>
             {/* Selo institucional */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
-              <div style={{ height: 1, width: 40, background: '#f5c842' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 32 }}>
+              <div style={{ height: 2, width: 48, background: '#f5c842', marginRight: 4 }} />
               <span style={{ color: '#f5c842', fontSize: 11, fontWeight: 700, letterSpacing: 4 }}>TECNOLOGIA PARA O CAMPO BRASILEIRO</span>
             </div>
 
@@ -396,8 +396,12 @@ export default function Home() {
               display: 'block',
               borderRadius: 2,
             }}>
-              CADASTRAR MINHA GRANJA
+              CADASTRAR MINHA GRANJA — 14 DIAS GRÁTIS
             </a>
+            <div style={{ background: 'rgba(122,182,72,0.08)', border: '1px solid rgba(122,182,72,0.2)', borderRadius: 4, padding: '14px 20px', textAlign: 'center' }}>
+              <p style={{ color: '#7ab648', fontSize: 13, fontWeight: 700, margin: '0 0 2px' }}>R$ 59,90/mês</p>
+              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, margin: 0 }}>ou R$ 499,90/ano · economia de 30%</p>
+            </div>
             <a href="/auth/login" style={{
               background: 'transparent',
               color: 'rgba(255,255,255,0.6)',
