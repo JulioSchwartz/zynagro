@@ -342,85 +342,152 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── ACESSO ── */}
-      <section id="contato" style={{ background: '#1a2e0d', padding: '100px 48px', position: 'relative', overflow: 'hidden' }}>
+
+      {/* ── PLANOS ── */}
+      <section id="planos" style={{ background: '#f7f7f5', padding: '100px 48px' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 16 }}>
+              <div style={{ height: 1, width: 32, background: '#8b5e2a' }} />
+              <span style={{ color: '#8b5e2a', fontSize: 11, fontWeight: 700, letterSpacing: 4 }}>PLANOS</span>
+              <div style={{ height: 1, width: 32, background: '#8b5e2a' }} />
+            </div>
+            <h2 style={{ fontSize: 38, fontWeight: 900, color: '#1a2e0d', margin: '0 0 16px', lineHeight: 1.1 }}>
+              Simples. Sem surpresas.
+            </h2>
+            <p style={{ color: '#64748b', fontSize: 16, lineHeight: 1.7, maxWidth: 480, margin: '0 auto' }}>
+              14 dias grátis para testar tudo. Cancele quando quiser.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, maxWidth: 760, margin: '0 auto' }}>
+            {/* Plano Mensal */}
+            <div style={{ background: '#fff', border: '2px solid #e2e8f0', borderRadius: 16, padding: '40px 36px' }}>
+              <p style={{ color: '#8b5e2a', fontSize: 11, fontWeight: 700, letterSpacing: 3, margin: '0 0 20px' }}>MENSAL</p>
+              <div style={{ marginBottom: 28 }}>
+                <span style={{ fontSize: 42, fontWeight: 900, color: '#1a2e0d' }}>R$ 59,90</span>
+                <span style={{ fontSize: 15, color: '#94a3b8', marginLeft: 6 }}>/mês</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12, marginBottom: 32 }}>
+                {[
+                  'Gestão completa de lotes',
+                  'Diário do galpão ilimitado',
+                  'Pesagem e controle sanitário',
+                  'Financeiro por lote',
+                  'Relatórios e exportação CSV',
+                  'Suporte por e-mail',
+                ].map((f, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ color: '#7ab648', fontSize: 16, fontWeight: 700 }}>✓</span>
+                    <span style={{ color: '#374151', fontSize: 14 }}>{f}</span>
+                  </div>
+                ))}
+              </div>
+              <a href="/auth/cadastro" style={{
+                display: 'block', textAlign: 'center',
+                background: '#1a2e0d', color: '#fff',
+                padding: '14px 24px', borderRadius: 8,
+                fontWeight: 700, fontSize: 14, textDecoration: 'none',
+                letterSpacing: 1,
+              }}>
+                COMEÇAR GRÁTIS →
+              </a>
+              <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: 12, margin: '12px 0 0' }}>14 dias grátis · sem cartão</p>
+            </div>
+
+            {/* Plano Anual — destaque */}
+            <div style={{ background: '#1a2e0d', border: '2px solid #f5c842', borderRadius: 16, padding: '40px 36px', position: 'relative' as const }}>
+              <div style={{
+                position: 'absolute' as const, top: -14, left: '50%', transform: 'translateX(-50%)',
+                background: '#f5c842', color: '#1a2e0d',
+                fontSize: 11, fontWeight: 800, letterSpacing: 2,
+                padding: '5px 18px', borderRadius: 100,
+              }}>MELHOR VALOR</div>
+              <p style={{ color: '#f5c842', fontSize: 11, fontWeight: 700, letterSpacing: 3, margin: '0 0 20px' }}>ANUAL</p>
+              <div style={{ marginBottom: 8 }}>
+                <span style={{ fontSize: 42, fontWeight: 900, color: '#fff' }}>R$ 499,90</span>
+                <span style={{ fontSize: 15, color: 'rgba(255,255,255,0.4)', marginLeft: 6 }}>/ano</span>
+              </div>
+              <p style={{ color: '#7ab648', fontSize: 13, fontWeight: 600, margin: '0 0 28px' }}>
+                ≈ R$ 41,65/mês · economia de 30%
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12, marginBottom: 32 }}>
+                {[
+                  'Tudo do plano mensal',
+                  'Economia de R$ 219,00/ano',
+                  'Prioridade no suporte',
+                  'Acesso a novas funcionalidades',
+                ].map((f, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ color: '#f5c842', fontSize: 16, fontWeight: 700 }}>✓</span>
+                    <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14 }}>{f}</span>
+                  </div>
+                ))}
+              </div>
+              <a href="/auth/cadastro" style={{
+                display: 'block', textAlign: 'center',
+                background: '#f5c842', color: '#1a2e0d',
+                padding: '14px 24px', borderRadius: 8,
+                fontWeight: 800, fontSize: 14, textDecoration: 'none',
+                letterSpacing: 1,
+              }}>
+                COMEÇAR GRÁTIS →
+              </a>
+              <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.35)', fontSize: 12, margin: '12px 0 0' }}>14 dias grátis · sem cartão</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CONTATO ── */}
+      <section id="contato" style={{ background: '#1a2e0d', padding: '80px 48px', position: 'relative', overflow: 'hidden' }}>
         <div style={{
           position: 'absolute', right: -100, top: -100,
           width: 500, height: 500,
           background: 'radial-gradient(circle, rgba(122,182,72,0.08) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 80, alignItems: 'center', position: 'relative' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-              <div style={{ height: 1, width: 32, background: '#f5c842' }} />
-              <span style={{ color: '#f5c842', fontSize: 11, fontWeight: 700, letterSpacing: 4 }}>ACESSO À PLATAFORMA</span>
-            </div>
-            <h2 style={{ fontSize: 42, fontWeight: 900, color: '#fff', lineHeight: 1.1, margin: '0 0 20px' }}>
-              Pronto para levar sua granja para outro nível?
-            </h2>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 16, lineHeight: 1.8, marginBottom: 40 }}>
-              Entre em contato pelo e-mail abaixo ou acesse diretamente a plataforma. Nossa equipe acompanha cada produtor no processo de cadastro e configuração da granja.
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <div style={{ background: 'rgba(245,200,66,0.1)', border: '1px solid rgba(245,200,66,0.2)', borderRadius: 4, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ fontSize: 18 }}>✉️</span>
-                </div>
-                <div>
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, margin: 0, letterSpacing: 2 }}>E-MAIL</p>
-                  <p style={{ color: '#fff', fontSize: 14, fontWeight: 600, margin: '2px 0 0' }}>suportezynagro@gmail.com</p>
-                </div>
+        <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center', position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 20 }}>
+            <div style={{ height: 1, width: 32, background: '#f5c842' }} />
+            <span style={{ color: '#f5c842', fontSize: 11, fontWeight: 700, letterSpacing: 4 }}>CONTATO</span>
+            <div style={{ height: 1, width: 32, background: '#f5c842' }} />
+          </div>
+          <h2 style={{ fontSize: 36, fontWeight: 900, color: '#fff', lineHeight: 1.1, margin: '0 0 16px' }}>
+            Alguma dúvida?
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 16, lineHeight: 1.8, marginBottom: 40 }}>
+            Nossa equipe acompanha cada produtor no processo de cadastro e configuração da granja.
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 32, flexWrap: 'wrap', marginBottom: 40 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ background: 'rgba(245,200,66,0.1)', border: '1px solid rgba(245,200,66,0.2)', borderRadius: 4, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 18 }}>✉️</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <div style={{ background: 'rgba(122,182,72,0.1)', border: '1px solid rgba(122,182,72,0.2)', borderRadius: 4, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ fontSize: 18 }}>🌐</span>
-                </div>
-                <div>
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, margin: 0, letterSpacing: 2 }}>PLATAFORMA</p>
-                  <p style={{ color: '#fff', fontSize: 14, fontWeight: 600, margin: '2px 0 0' }}>zynagro.com.br</p>
-                </div>
+              <div style={{ textAlign: 'left' }}>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, margin: 0, letterSpacing: 2 }}>E-MAIL</p>
+                <p style={{ color: '#fff', fontSize: 14, fontWeight: 600, margin: '2px 0 0' }}>suportezynagro@gmail.com</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ background: 'rgba(122,182,72,0.1)', border: '1px solid rgba(122,182,72,0.2)', borderRadius: 4, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 18 }}>🌐</span>
+              </div>
+              <div style={{ textAlign: 'left' }}>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, margin: 0, letterSpacing: 2 }}>PLATAFORMA</p>
+                <p style={{ color: '#fff', fontSize: 14, fontWeight: 600, margin: '2px 0 0' }}>zynagro.com.br</p>
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <a href="/auth/cadastro" style={{
-              background: '#7ab648',
-              color: '#fff',
-              padding: '20px 40px',
-              textAlign: 'center',
-              fontWeight: 800,
-              fontSize: 14,
-              textDecoration: 'none',
-              letterSpacing: 2,
-              display: 'block',
-              borderRadius: 2,
-            }}>
-              CADASTRAR MINHA GRANJA — 14 DIAS GRÁTIS
-            </a>
-            <div style={{ background: 'rgba(122,182,72,0.08)', border: '1px solid rgba(122,182,72,0.2)', borderRadius: 4, padding: '14px 20px', textAlign: 'center' }}>
-              <p style={{ color: '#7ab648', fontSize: 13, fontWeight: 700, margin: '0 0 2px' }}>R$ 59,90/mês</p>
-              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, margin: 0 }}>ou R$ 499,90/ano · economia de 30%</p>
-            </div>
-            <a href="/auth/login" style={{
-              background: 'transparent',
-              color: 'rgba(255,255,255,0.6)',
-              padding: '18px 40px',
-              textAlign: 'center',
-              fontWeight: 600,
-              fontSize: 14,
-              textDecoration: 'none',
-              letterSpacing: 1,
-              display: 'block',
-              border: '1px solid rgba(255,255,255,0.15)',
-              borderRadius: 2,
-            }}>
-              JÁ TENHO ACESSO → ENTRAR
-            </a>
-            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 12, textAlign: 'center', margin: 0, lineHeight: 1.6 }}>
-              Suporte disponível via e-mail para configuração inicial da granja e dúvidas sobre a plataforma.
-            </p>
-          </div>
+          <a href="/auth/cadastro" style={{
+            display: 'inline-block',
+            background: '#7ab648', color: '#fff',
+            padding: '16px 48px', borderRadius: 4,
+            fontWeight: 800, fontSize: 14, textDecoration: 'none',
+            letterSpacing: 2,
+          }}>
+            CADASTRAR MINHA GRANJA →
+          </a>
         </div>
       </section>
 
