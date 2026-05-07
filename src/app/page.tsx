@@ -318,7 +318,7 @@ export default function Home() {
             <span style={{ color: '#8b5e2a', fontSize: 11, fontWeight: 700, letterSpacing: 4 }}>COMPATIBILIDADE</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 24, marginBottom: 48 }}>
-            <h2 style={{ fontSize: 38, fontWeight: 900, color: '#1a2e0d', margin: 0, lineHeight: 1.1, maxWidth: 480 }}>
+            <h2 style={{ fontSize: 38, fontWeight: 900, color: '#ffffff', margin: 0, lineHeight: 1.1, maxWidth: 480 }}>
               Preparado para as principais integradoras do Brasil.
             </h2>
             <p style={{ color: '#64748b', fontSize: 15, lineHeight: 1.7, maxWidth: 360, margin: 0 }}>
