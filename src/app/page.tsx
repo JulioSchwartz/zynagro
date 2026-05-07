@@ -41,6 +41,7 @@ export default function Home() {
           <a href="#sobre" style={{ color: '#a7d888', fontWeight: 500, fontSize: 14, textDecoration: 'none', letterSpacing: 0.5 }}>Sobre</a>
           <a href="#funcionalidades" style={{ color: '#a7d888', fontWeight: 500, fontSize: 14, textDecoration: 'none', letterSpacing: 0.5 }}>Funcionalidades</a>
           <a href="#integradoras" style={{ color: '#a7d888', fontWeight: 500, fontSize: 14, textDecoration: 'none', letterSpacing: 0.5 }}>Integradoras</a>
+          <a href="#planos" style={{ color: '#a7d888', fontWeight: 500, fontSize: 14, textDecoration: 'none', letterSpacing: 0.5 }}>Planos</a>
           <a href="#contato" style={{ color: '#a7d888', fontWeight: 500, fontSize: 14, textDecoration: 'none', letterSpacing: 0.5 }}>Contato</a>
           <a href="/auth/login" style={{
             color: '#fff',
@@ -310,7 +311,7 @@ export default function Home() {
       </section>
 
       {/* ── INTEGRADORAS ── */}
-      <section id="integradoras" style={{ background: '#f7f7f5', padding: '80px 48px' }}>
+      <section id="integradoras" style={{ background: '#1a2e0d', padding: '80px 48px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
             <div style={{ height: 1, width: 32, background: '#8b5e2a' }} />
@@ -333,9 +334,9 @@ export default function Home() {
               { nome: 'Seara', detalhe: 'Nacional' },
               { nome: 'Frangosul', detalhe: 'Rio Grande do Sul' },
             ].map((int, i) => (
-              <div key={i} style={{ background: '#fff', padding: '24px 20px', borderBottom: '3px solid #1a2e0d' }}>
-                <p style={{ fontWeight: 900, fontSize: 18, color: '#1a2e0d', margin: '0 0 6px' }}>{int.nome}</p>
-                <p style={{ color: '#94a3b8', fontSize: 12, margin: 0, fontWeight: 500 }}>{int.detalhe}</p>
+              <div key={i} style={{ background: 'rgba(255,255,255,0.04)', padding: '24px 20px', borderBottom: '3px solid #f5c842', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <p style={{ fontWeight: 900, fontSize: 18, color: '#fff', margin: '0 0 6px' }}>{int.nome}</p>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, margin: 0, fontWeight: 500 }}>{int.detalhe}</p>
               </div>
             ))}
           </div>
